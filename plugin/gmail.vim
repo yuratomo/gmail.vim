@@ -2,6 +2,12 @@
 " Last Modified: 2012.06.20
 " Author: yuratomo (twitter @yusetomo)
 
+" 未読数を表示する search unseen
+" シンタックス
+" 選択しているmailboxとlistを視覚化
+" opensslのプロセスが残る？
+" 「次のメッセージを表示する」を追加
+
 if !exists('g:gmail_command')
   let g:gmail_command = 'openssl'
 endif
@@ -11,12 +17,11 @@ if !exists('g:gmail_server')
 endif
 
 let s:gmail_title_prefix = 'gmail-'
-let [ s:MODE_MAILBOX, s:MODE_LIST, s:MODE_VIEW ] = range(3)
+let [ s:MODE_MAILBOX, s:MODE_LIST, s:MODE_BODY ] = range(3)
 
 command! -nargs=0 Gmail :call gmail#start()
 
 function! gmail#start()
-  call s:openWindow()
   call s:login()
   call s:mailbox()
 endfunction
@@ -29,27 +34,19 @@ function! gmail#exit()
 endfunction
 
 function! gmail#open()
-  if t:gmail_mode == s:MODE_MAILBOX
+  if s:mode() == s:MODE_MAILBOX
     let line = line('.')
-    call s:select(t:gmail_maibox[line].name)
+    call s:select(t:gmail_maibox[line-1].name)
     call s:list()
-  elseif t:gmail_mode == s:MODE_LIST
+  elseif s:mode() == s:MODE_LIST
     let line = split(getline('.'), ' ')
     call s:body(line[0])
   endif
 endfunction
 
-function! gmail#back()
-  if t:gmail_mode == s:MODE_MAILBOX
-  elseif t:gmail_mode == s:MODE_LIST
-    call s:mailbox()
-  elseif t:gmail_mode == s:MODE_VIEW
-    call s:list()
-  endif
-endfunction
-
 
 function! s:login()
+  call s:openWindow(s:MODE_MAILBOX)
   if !exists('g:gmail_user_name')
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
   endif
@@ -85,6 +82,7 @@ function! s:logout()
 endfunction
 
 function! s:mailbox()
+  call s:openWindow(s:MODE_MAILBOX)
   call s:clear()
   if !exists('t:gmail_maibox')
     let idx = 1
@@ -101,18 +99,17 @@ function! s:mailbox()
   else
     call setline(1, t:gmail_maibox_line)
   endif
-  let t:gmail_mode = s:MODE_MAILBOX
 endfunction
 
 function! s:select(mb)
-  let res = s:request("? select " . a:mb)
-  call setline(1, res)
+  call s:request("? select " . a:mb)
   if exists('t:gmail_list')
     unlet t:gmail_list
   endif
 endfunction
 
 function! s:list()
+  call s:openWindow(s:MODE_LIST)
   if !exists('t:gmail_list')
     let res = s:request("? search all")
     let items = split(res[0], ' ')
@@ -140,14 +137,13 @@ function! s:list()
   call s:clear()
   call setline(1, t:gmail_list)
   redraw
-  let t:gmail_mode = s:MODE_LIST
 endfunction
 
 function! s:body(id)
+  call s:openWindow(s:MODE_BODY)
   call s:clear()
   let res = s:request("? fetch " . a:id . " RFC822.TEXT")
   call setline(1, map(res[1 : -3], "iconv(v:val, 'iso-2022-jp', &enc)"))
-  let t:gmail_mode = s:MODE_VIEW
 endfunction
 
 function! s:request(cmd)
@@ -175,26 +171,55 @@ function! s:request(cmd)
   return split(res, "\r")
 endfunction
 
-function! s:openWindow()
-  if exists('t:sub')
-    return
+function! s:openWindow(mode)
+ "if exists('t:sub')
+ "  return
+ "endif
+
+  let pref = ''
+  if a:mode == s:MODE_MAILBOX
+    let pref = 'mailbox'
+  elseif a:mode == s:MODE_LIST
+    let pref = 'list'
+  elseif a:mode == s:MODE_BODY
+    let pref = 'body'
   endif
 
   let winnum = winnr('$')
   for winno in range(1, winnum)
     let bufname = bufname(winbufnr(winno))
-    if bufname =~ s:gmail_title_prefix
+    if bufname =~ s:gmail_title_prefix . pref
        exe winno . "wincmd w"
        return
     endif
   endfor
 
   let id = 1
-  while buflisted(s:gmail_title_prefix . id)
+  while buflisted(s:gmail_title_prefix . pref . id)
     let id += 1
   endwhile
-  let bufname = s:gmail_title_prefix . id
-  new
+  let bufname = s:gmail_title_prefix . pref . id
+  
+  if a:mode == s:MODE_MAILBOX
+    vert new
+    vert res 30
+  elseif a:mode == s:MODE_LIST
+    new
+    wincmd K
+    res 10
+  else
+    let winnum = winnr('$')
+    for winno in range(1, winnum)
+      let bufname = bufname(winbufnr(winno))
+      if stridx(bufname, s:gmail_title_prefix) != 0
+         exe winno . "wincmd w"
+        "new
+        "wincmd p
+        "q
+      endif
+    endfor
+  endif
+
   silent edit `=bufname`
   setl bt=nofile noswf nowrap hidden nolist
 
@@ -204,7 +229,6 @@ function! s:openWindow()
   augroup END
 
   nnoremap <buffer> <CR> :call gmail#open()<CR>
-  nnoremap <buffer> <BS> :call gmail#back()<CR>
 
 endfunction
 
@@ -267,3 +291,14 @@ function! s:clear()
   % delete _
 endfunction
 
+function! s:mode()
+  let bufname = bufname('%')
+  if bufname =~ s:gmail_title_prefix . 'mailbox'
+    return s:MODE_MAILBOX
+  elseif bufname =~ s:gmail_title_prefix . 'list'
+    return s:MODE_LIST
+  elseif bufname =~ s:gmail_title_prefix . 'body'
+    return s:MODE_BODY
+  endif
+  return -1
+endfunction
