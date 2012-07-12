@@ -4,9 +4,9 @@
 
 " 未読数を表示する search unseen
 " シンタックス
-" 選択しているmailboxとlistを視覚化
 " opensslのプロセスが残る？
 " 「次のメッセージを表示する」を追加
+" opensslのタイムアウト問題
 
 if !exists('g:gmail_command')
   let g:gmail_command = 'openssl'
@@ -34,16 +34,21 @@ function! gmail#exit()
 endfunction
 
 function! gmail#open()
+  let l = line('.')
   if s:mode() == s:MODE_MAILBOX
-    let line = line('.')
-    call s:select(t:gmail_maibox[line-1].name)
-    call s:list()
+    call s:hilightLine(l)
+    call s:select(t:gmail_maibox[l-1].name)
+    call s:list(0)
   elseif s:mode() == s:MODE_LIST
-    let line = split(getline('.'), ' ')
-    call s:body(line[0])
+    if l == line('$')
+      call s:list(1)
+    else
+      call s:hilightLine(l)
+      let line = split(getline('.'), ' ')
+      call s:body(line[0])
+    endif
   endif
 endfunction
-
 
 function! s:login()
   call s:openWindow(s:MODE_MAILBOX)
@@ -105,19 +110,32 @@ function! s:select(mb)
   call s:request("? select " . a:mb)
   if exists('t:gmail_list')
     unlet t:gmail_list
+    unlet t:gmail_uids
   endif
 endfunction
 
-function! s:list()
+function! s:list(next)
   call s:openWindow(s:MODE_LIST)
-  if !exists('t:gmail_list')
-    let res = s:request("? search all")
-    let items = split(res[0], ' ')
-    let t:gmail_uids = items[ 2 : -1 ]
+  call clearmatches()
 
-    let res = s:request("? fetch " . items[-10] . ":" . items[-1] . " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])")
+  if !exists('t:gmail_list') || a:next > 0
+    let items = []
+    if !exists('t:gmail_uids')
+      let res = s:request("? search all")
+      let items = split(res[0], ' ')
+      let t:gmail_uids = items[ 2 : -1 ]
+    endif
+
+    let fs = items[-10*a:next - 10]
+    let fe = items[-10*a:next - 1]
+    if a:next == 0
+      let t:gmail_list = []
+    else
+      let t:gmail_list = t:gmail_list[ 0 : -1 ]
+    endif
+
+    let res = s:request("? fetch " . fs . ":" . fe . " (FLAGS BODY[HEADER.FIELDS (DATE FROM SUBJECT)])")
     let mail = ''
-    let t:gmail_list = []
     for r in res
       let parts = split(r, ' ')
       if stridx(r, '*') == 0
@@ -133,6 +151,7 @@ function! s:list()
         endif
       endif
     endfor
+    call add(t:gmail_list, '前の10件を表示する')
   endif
   call s:clear()
   call setline(1, t:gmail_list)
@@ -225,7 +244,7 @@ function! s:openWindow(mode)
 
   augroup gmail
     au!
-    exe 'au BufDelete <buffer> call gmail#exit()'
+    exe 'au BufUnload <buffer> call gmail#exit()'
   augroup END
 
   nnoremap <buffer> <CR> :call gmail#open()<CR>
@@ -302,3 +321,13 @@ function! s:mode()
   endif
   return -1
 endfunction
+
+function! s:hilightLine(line)
+  if !hlexists('gmailCurrent')
+    highlight! link gmailCurrent Function
+  endif
+  call clearmatches()
+  redraw
+  call matchadd('gmailCurrent', '\%' . a:line . 'l')
+endfunction
+
