@@ -4,7 +4,6 @@
 
 " 未読数を表示する search unseen
 " シンタックス
-" opensslのプロセスが残る？
 " 「次のメッセージを表示する」を追加
 " opensslのタイムアウト問題
 
@@ -51,6 +50,7 @@ function! gmail#open()
 endfunction
 
 function! s:login()
+  let g:gmail_login_now = 1
   call s:openWindow(s:MODE_MAILBOX)
   if !exists('g:gmail_user_name')
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
@@ -72,13 +72,14 @@ function! s:login()
         break
       endif
     else
-      sleep
+      "sleep
     endif
   endwhile
 
   let res = s:request("? login " . g:gmail_user_name . " " . g:gmail_user_pass)
   call setline(idx, res)
   redraw
+  let g:gmail_login_now = 0
 endfunction
 
 function! s:logout()
@@ -112,6 +113,7 @@ function! s:select(mb)
     unlet t:gmail_list
     unlet t:gmail_uids
   endif
+  let g:gmail_select_mailbox = a:mb
 endfunction
 
 function! s:list(next)
@@ -168,7 +170,18 @@ endfunction
 function! s:request(cmd)
   let cmd = a:cmd . "\r\n"
   let res = ''
-  call t:sub.stdin.write(cmd)
+  try
+    call t:sub.stdin.write(cmd)
+  catch /.*/
+    if g:gmail_login_now == 0
+      call gmail#exit()
+      call s:login()
+      call s:select(g:gmail_select_mailbox)
+      call s:list(0)
+      call t:sub.stdin.write(cmd)
+    endif
+  endtry
+
   let end = 0
   while !t:sub.stdout.eof
     let line = substitute(t:sub.stdout.read(), nr2char(10), '', 'g')
@@ -184,7 +197,7 @@ function! s:request(cmd)
         break
       endif
     else
-      sleep
+      "sleep
     endif
   endwhile
   return split(res, "\r")
@@ -244,7 +257,8 @@ function! s:openWindow(mode)
 
   augroup gmail
     au!
-    exe 'au BufUnload <buffer> call gmail#exit()'
+    exe 'au BufDelete <buffer> call gmail#exit()'
+    exe 'au VimLeavePre * call gmail#exit()'
   augroup END
 
   nnoremap <buffer> <CR> :call gmail#open()<CR>
