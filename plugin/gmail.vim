@@ -2,7 +2,6 @@
 " Last Modified: 2012.06.20
 " Author: yuratomo (twitter @yusetomo)
 
-" 未読数を表示する search unseen
 " シンタックス
 " 「次のメッセージを表示する」を追加
 " opensslのタイムアウト問題
@@ -15,6 +14,10 @@ if !exists('g:gmail_server')
   let g:gmail_server = 'imap.gmail.com:993'
 endif
 
+if !exists("g:Gmail_cache")
+  let g:gmail_cache = $home.'\\.vim_gmail'
+endif
+
 let s:gmail_title_prefix = 'gmail-'
 let [ s:MODE_MAILBOX, s:MODE_LIST, s:MODE_BODY ] = range(3)
 
@@ -22,7 +25,7 @@ command! -nargs=0 Gmail :call gmail#start()
 
 function! gmail#start()
   call s:login()
-  call s:mailbox()
+  call s:mailbox(0)
 endfunction
 
 function! gmail#exit()
@@ -35,6 +38,7 @@ endfunction
 function! gmail#open()
   let l = line('.')
   if s:mode() == s:MODE_MAILBOX
+    let t:gmail_mailbox_idx = l
     call s:hilightLine(l)
     call s:select(t:gmail_maibox[l-1].name)
     call s:list(0)
@@ -50,7 +54,7 @@ function! gmail#open()
 endfunction
 
 function! s:login()
-  let g:gmail_login_now = 1
+  let t:gmail_login_now = 1
   call s:openWindow(s:MODE_MAILBOX)
   if !exists('g:gmail_user_name')
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
@@ -79,7 +83,7 @@ function! s:login()
   let res = s:request("? login " . g:gmail_user_name . " " . g:gmail_user_pass)
   call setline(idx, res)
   redraw
-  let g:gmail_login_now = 0
+  let t:gmail_login_now = 0
 endfunction
 
 function! s:logout()
@@ -87,7 +91,7 @@ function! s:logout()
   call setline(1, res)
 endfunction
 
-function! s:mailbox()
+function! s:mailbox(mode)
   call s:openWindow(s:MODE_MAILBOX)
   call s:clear()
   if !exists('t:gmail_maibox')
@@ -98,8 +102,20 @@ function! s:mailbox()
     for line in results[ 0 : -2 ]
       let s = strridx(line, '"', len(line)-2)
       call add(t:gmail_maibox, { 'name' : line[ s+1 : -2 ] } )
-      call add(t:gmail_maibox_line, s:decodeUtf7(t:gmail_maibox[idx-1].name))
+      if a:mode == 1
+        let stat = s:request('? STATUS "' . t:gmail_maibox[idx-1].name . '" (UNSEEN)')
+        if len(stat) > 1
+          let stats = split(stat[0], ' ')
+          let unseen = '(' . stats[4]
+        else
+          let unseen = ''
+        endif
+      else 
+        let unseen = '(-)'
+      endif
+      call add(t:gmail_maibox_line, s:decodeUtf7(t:gmail_maibox[idx-1].name . unseen))
       call setline(idx, t:gmail_maibox_line[idx-1])
+      redraw
       let idx += 1
     endfor
   else
@@ -112,8 +128,18 @@ function! s:select(mb)
   if exists('t:gmail_list')
     unlet t:gmail_list
     unlet t:gmail_uids
+    unlet t:gmail_unseens
   endif
-  let g:gmail_select_mailbox = a:mb
+  let t:gmail_select_mailbox = a:mb
+
+  let res = s:request("? search unseen")
+  let uitems = split(res[0], ' ')
+  let t:gmail_unseens = uitems[ 2 : -1 ]
+  let unseen = '(' . len(t:gmail_unseens) . ')'
+  let idx = t:gmail_mailbox_idx
+  let t:gmail_maibox_line[idx-1] = s:decodeUtf7(t:gmail_maibox[idx-1].name . unseen)
+  call setline(idx, t:gmail_maibox_line[idx-1])
+  redraw
 endfunction
 
 function! s:list(next)
@@ -121,15 +147,24 @@ function! s:list(next)
   call clearmatches()
 
   if !exists('t:gmail_list') || a:next > 0
-    let items = []
+
     if !exists('t:gmail_uids')
       let res = s:request("? search all")
       let items = split(res[0], ' ')
       let t:gmail_uids = items[ 2 : -1 ]
     endif
 
-    let fs = items[-10*a:next - 10]
-    let fe = items[-10*a:next - 1]
+    let last = len(t:gmail_uids)
+    let is = last - 10*a:next - 10
+    let ie = last - 10*a:next - 1
+    if is < 0
+      let is = 0
+    endif
+    if ie < 0
+      let ie = 0
+    endif
+    let fs = t:gmail_uids[is]
+    let fe = t:gmail_uids[ie]
     if a:next == 0
       let t:gmail_list = []
     else
@@ -141,7 +176,12 @@ function! s:list(next)
     for r in res
       let parts = split(r, ' ')
       if stridx(r, '*') == 0
-        let mail = parts[1] . ' '
+        if index(t:gmail_unseens, parts[1]) > 0
+          let mark = '*'
+        else
+          let mark = ' '
+        endif
+        let mail = mark . parts[1] . ' '
       elseif r == ")"
         call insert(t:gmail_list, mail, 0)
       elseif r =~ '=?.*?='
@@ -170,13 +210,19 @@ endfunction
 function! s:request(cmd)
   let cmd = a:cmd . "\r\n"
   let res = ''
+
+  if t:gmail_login_now == 0
+    redraw
+    echo cmd
+  endif
+
   try
     call t:sub.stdin.write(cmd)
   catch /.*/
-    if g:gmail_login_now == 0
+    if t:gmail_login_now == 0
       call gmail#exit()
       call s:login()
-      call s:select(g:gmail_select_mailbox)
+      call s:select(t:gmail_select_mailbox)
       call s:list(0)
       call t:sub.stdin.write(cmd)
     endif
@@ -200,14 +246,11 @@ function! s:request(cmd)
       "sleep
     endif
   endwhile
+  "exe "echoerr '" . res . "'"
   return split(res, "\r")
 endfunction
 
 function! s:openWindow(mode)
- "if exists('t:sub')
- "  return
- "endif
-
   let pref = ''
   if a:mode == s:MODE_MAILBOX
     let pref = 'mailbox'
@@ -234,20 +277,17 @@ function! s:openWindow(mode)
   
   if a:mode == s:MODE_MAILBOX
     vert new
-    vert res 30
+    vert res 20
   elseif a:mode == s:MODE_LIST
     new
     wincmd K
-    res 10
+    res 12
   else
     let winnum = winnr('$')
     for winno in range(1, winnum)
-      let bufname = bufname(winbufnr(winno))
-      if stridx(bufname, s:gmail_title_prefix) != 0
+      let bn = bufname(winbufnr(winno))
+      if stridx(bn, s:gmail_title_prefix) != 0
          exe winno . "wincmd w"
-        "new
-        "wincmd p
-        "q
       endif
     endfor
   endif
