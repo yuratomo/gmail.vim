@@ -176,7 +176,7 @@ function! s:list(next)
     for r in res
       let parts = split(r, ' ')
       if stridx(r, '*') == 0
-        if index(t:gmail_unseens, parts[1]) > 0
+        if index(t:gmail_unseens, parts[1]) >= 0
           let mark = '*'
         else
           let mark = ' '
