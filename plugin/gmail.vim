@@ -4,6 +4,11 @@
 
 " http://wiki.mediatemple.net/w/Email_via_IMAP_using_Telnet
 " http://www.lins.jp/~obata/imap/rfc/rfc2060ja.html#s6.4.4
+"
+" 各ウィンドウを閉じてもふっかつできるようにする
+" 変数名の見直し
+" メール送信しらべる smtp x openssl
+"
 
 let s:gmail_search_key = 'ALL'
 
@@ -32,17 +37,17 @@ function! gmail#start()
   call s:login()
   call s:mailbox(0)
   if g:gmail_default_mailbox != ''
-    let s:gmail_mailbox_idx = -1
+    let mbidx = -1
     let idx = 0
     for item in s:gmail_mailbox
       if item.name =~ g:gmail_default_mailbox
-        let s:gmail_mailbox_idx = idx
+        let mbidx = idx
         break
       endif
       let idx += 1
     endfor
-    if s:gmail_mailbox_idx != -1
-      call s:select(item.name)
+    if mbidx != -1
+      call s:select(mbidx)
       call s:list(0)
     endif
   endif
@@ -61,9 +66,7 @@ endfunction
 function! gmail#open()
   let l = line('.')
   if s:mode() == s:MODE_MAILBOX
-    let s:gmail_mailbox_idx = l
-    call s:hilightLine(l)
-    call s:select(s:gmail_mailbox[l-1].name)
+    call s:select(l-1)
     call s:list(0)
   elseif s:mode() == s:MODE_LIST
     if l == line('$')
@@ -82,11 +85,18 @@ endfunction
 
 function! gmail#update()
   if s:mode() == s:MODE_MAILBOX
-    unlet s:gmail_mailbox
+    if exists('s:gmail_mailbox')
+      unlet s:gmail_mailbox
+    endif
     call s:mailbox(1)
   elseif s:mode() == s:MODE_LIST
-    unlet s:gmail_uids
-    call s:list(s:gmail_page)
+    if exists('s:gmail_uids')
+      unlet s:gmail_uids
+    endif
+    if exists('s:gmail_list')
+      unlet s:gmail_list
+    endif
+    call s:list(0)
   endif
 endfunction
 
@@ -127,23 +137,22 @@ function! s:login()
 endfunction
 
 function! s:relogin()
-  let mailbox = s:gmail_selected_mailbox
   call gmail#exit()
   call s:login()
-  call s:select(mailbox)
+  call s:select(s:gmail_mailbox_idx)
 endfunction
 
 function! s:logout()
   let res = s:request("? LOGOUT")
-  set modifiable
+  setl modifiable
   call setline(1, res)
-  set nomodifiable
+  setl nomodifiable
 endfunction
 
 function! s:mailbox(mode)
   call s:openWindow(s:MODE_MAILBOX)
 
-  set modifiable
+  setl modifiable
   call s:clear()
   if !exists('s:gmail_mailbox')
     let idx = 1
@@ -172,28 +181,28 @@ function! s:mailbox(mode)
   else
     call setline(1, s:gmail_maibox_line)
   endif
-  set nomodifiable
+  setl nomodifiable
 endfunction
 
 function! s:select(mb)
-  call s:request("? SELECT " . a:mb)
+  call s:request("? SELECT " . s:gmail_mailbox[a:mb].name)
   if exists('s:gmail_list')
     unlet s:gmail_list
     unlet s:gmail_uids
     unlet s:gmail_unseens
   endif
-  let s:gmail_selected_mailbox = a:mb
+  let s:gmail_mailbox_idx = a:mb
+  call s:hilightLine(a:mb+1)
 
   let res = s:request("? SEARCH UNSEEN")
   let uitems = split(res[0], ' ')
   let s:gmail_unseens = uitems[ 2 : -1 ]
   let unseen = '(' . len(s:gmail_unseens) . ')'
-  let idx = s:gmail_mailbox_idx
-  let s:gmail_maibox_line[idx-1] = s:decodeUtf7(s:gmail_mailbox[idx-1].name . unseen)
+  let s:gmail_maibox_line[a:mb] = s:decodeUtf7(s:gmail_mailbox[a:mb].name . unseen)
 
-  set modifiable
-  call setline(idx, s:gmail_maibox_line[idx-1])
-  set nomodifiable
+  setl modifiable
+  call setline(a:mb+1, s:gmail_maibox_line[a:mb])
+  setl nomodifiable
   redraw
 endfunction
 
@@ -261,10 +270,10 @@ function! s:list(page)
     call add(s:gmail_list, 'next  search:' . s:gmail_search_key)
   endif
 
-  set modifiable
+  setl modifiable
   call s:clear()
   call setline(1, s:gmail_list)
-  set nomodifiable
+  setl nomodifiable
   redraw
 
   if a:page > 0
@@ -276,11 +285,11 @@ endfunction
 
 function! s:body(id)
   call s:openWindow(s:MODE_BODY)
-  set modifiable
+  setl modifiable
   call s:clear()
   let res = s:request("? FETCH " . a:id . " RFC822.TEXT")
   call setline(1, map(res[1 : -3], "iconv(v:val, 'iso-2022-jp', &enc)"))
-  set nomodifiable
+  setl nomodifiable
 endfunction
 
 function! s:request(cmd)

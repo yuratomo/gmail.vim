@@ -8,7 +8,7 @@ syn keyword gmailPrevNext   prev next
 syn keyword gmailSearch     search
 syn match   gmailUnseen0    "(0)"
 syn match   gmailUnseenNone "(-)"
-syn match   gmailUnseen     "(\d\*)"
+syn match   gmailUnseen     "(\d*)"
 syn match   gmailUnseenMail "^\*.*$"
 
 hi default link gmailPrevNext   PmenuSel
