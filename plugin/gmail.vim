@@ -4,13 +4,10 @@
 
 " http://wiki.mediatemple.net/w/Email_via_IMAP_using_Telnet
 " http://www.lins.jp/~obata/imap/rfc/rfc2060ja.html#s6.4.4
+" http://www.atmarkit.co.jp/fmobile/rensai/imap04/imap04.html
 "
-" 各ウィンドウを閉じてもふっかつできるようにする
-" 変数名の見直し
 " メール送信しらべる smtp x openssl
 "
-
-let s:gmail_search_key = 'ALL'
 
 if !exists('g:gmail_command')
   let g:gmail_command = 'openssl'
@@ -28,6 +25,7 @@ if !exists('g:gmail_default_mailbox')
   let g:gmail_default_mailbox = 'INBOX'
 endif
 
+let s:gmail_search_key = 'ALL'
 let s:gmail_title_prefix = 'gmail-'
 let [ s:MODE_MAILBOX, s:MODE_LIST, s:MODE_BODY ] = range(3)
 
@@ -124,8 +122,7 @@ function! s:login()
   while !s:sub.stdout.eof
     let line = substitute(s:sub.stdout.read(), nr2char(10), '', 'g')
     if line != ''
-      echon line
-      redraw
+      call s:message(line)
       if stridx(line, '* OK') >= 0
         break
       endif
@@ -195,6 +192,10 @@ function! s:select(mb)
   call s:hilightLine(a:mb+1)
 
   let res = s:request("? SEARCH UNSEEN")
+  if len(res) == 0
+    call s:message('select error(' . a:mb . ')')
+    return
+  endif
   let uitems = split(res[0], ' ')
   let s:gmail_unseens = uitems[ 2 : -1 ]
   let unseen = '(' . len(s:gmail_unseens) . ')'
@@ -287,8 +288,23 @@ function! s:body(id)
   call s:openWindow(s:MODE_BODY)
   setl modifiable
   call s:clear()
+  let res = s:request("? FETCH " . a:id . " (body[header.fields (from to subject date)])")
+  let list = []
+  let mail = ''
+  for r in res[1:-4]
+    let parts = split(r, ' ')
+    if r == ")"
+      call add(list, mail)
+    elseif r =~ '=?.*?='
+      let mail .= s:decodeMime(r)
+    else
+      call add(list, r)
+    endif
+  endfor
+  call add(list, '==================================================')
+  call setline(1, list)
   let res = s:request("? FETCH " . a:id . " RFC822.TEXT")
-  call setline(1, map(res[1 : -3], "iconv(v:val, 'iso-2022-jp', &enc)"))
+  call setline(line('$')+1, map(res[1 : -3], "iconv(v:val, 'iso-2022-jp', &enc)"))
   setl nomodifiable
 endfunction
 
@@ -297,8 +313,7 @@ function! s:request(cmd)
   let res = ''
 
   if s:gmail_login_now == 0
-    redraw
-    echon a:cmd
+    call s:message(a:cmd)
   endif
 
   try
@@ -343,7 +358,7 @@ function! s:openWindow(mode)
   let winnum = winnr('$')
   for winno in range(1, winnum)
     let bn = bufname(winbufnr(winno))
-    if bn =~ bufname
+    if bn == bufname
        exe winno . "wincmd w"
        return
     endif
@@ -460,6 +475,11 @@ function! s:hilightLine(line)
   call clearmatches()
   redraw
   call matchadd('gmailCurrent', '\%' . a:line . 'l')
+  redraw
+endfunction
+
+function! s:message(msg)
+  echon 'gmail:' . a:msg
   redraw
 endfunction
 
