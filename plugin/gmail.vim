@@ -19,5 +19,9 @@ if !exists('g:gmail_default_mailbox')
   let g:gmail_default_mailbox = 'INBOX'
 endif
 
+if !exists('g:gmail_default_encoding')
+  let g:gmail_default_encoding = "iso-2022-jp"
+endif
+
 command! -nargs=0 Gmail :call gmail#start()
 
