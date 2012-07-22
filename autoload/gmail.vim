@@ -76,17 +76,18 @@ function! gmail#open()
     if l == 1
       if expand('<cword>') == 'send'
         let messages = getline(2, line('$'))
-        let to = ''
+        let to = []
         for msg in messages
           if msg =~ "^To:" || msg =~ "^Cc:" || msg =~ "^Bcc:"
-            let to = msg[4:]
-            call s:sendmail(to, messages)
+            call add(to, msg[3:])
           else
             break
           endif
         endfor
-        if to == ''
+        if empty(to)
           call s:message('Specify the rcpt to')
+        else
+          call s:sendmail(to, messages)
         endif
       endif
     endif
@@ -409,9 +410,9 @@ function! s:sendmail(to, messages)
            \ ]
   if bidx > 0
     for header in a:messages[ 0 : bidx-1 ]
-      let lidx = stridx(header, ': ')
-      let label = header[ 0 : lidx+1 ]
-      let value = header[ lidx+2 : ]
+      let lidx = stridx(header, ':')
+      let label = header[ 0 : lidx ]
+      let value = header[ lidx+1 : ]
       if empty(value)
         let encoded_msg = label
       else
@@ -429,11 +430,16 @@ function! s:sendmail(to, messages)
     \  "AUTH PLAIN\r\n",
     \  AUTH,
     \  "MAIL FROM:<" . g:gmail_user_name . ">\r\n",
-    \  "RCPT TO:<" . a:to . ">\r\n",
+    \ ]
+  for t in a:to
+    call add(commands, "RCPT TO:<" . t . ">\r\n")
+  endfor
+  call extend(commands,
+    \[
     \  "DATA\r\n",
     \  join(contents, "\r\n") . "\r\n.\r\n",
     \  "QUIT \r\n",
-    \]
+    \])
 
   let err = 0
   for command in commands
@@ -566,7 +572,7 @@ endfunction
 
 function! s:mode()
   let bufname = bufname('%')
-  if bufname =~ s:gmail_title_prefix . s:gmail_wname[s:MODE_BODY]
+  if bufname =~ s:gmail_title_prefix . s:gmail_wname[s:MODE_MAILBOX]
     return s:MODE_MAILBOX
   elseif bufname =~ s:gmail_title_prefix . s:gmail_wname[s:MODE_LIST]
     return s:MODE_LIST
