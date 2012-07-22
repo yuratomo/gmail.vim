@@ -1,14 +1,19 @@
 
+" [参考]
 " http://wiki.mediatemple.net/w/Email_via_IMAP_using_Telnet
 " http://www.lins.jp/~obata/imap/rfc/rfc2060ja.html#s6.4.4
 " http://www.atmarkit.co.jp/fmobile/rensai/imap04/imap04.html
-"
-" 添付ファイルは？？？
-" メール送信しらべる smtp x openssl
 " http://bobpeers.com/technical/telnet_imap
 " http://b.ruyaka.com/2010/08/11/openssl-s_client%E3%81%A7gmail%E3%83%A1%E3%83%BC%E3%83%AB%E9%80%81%E4%BF%A1/
 " http://d.hatena.ne.jp/yatt/20110728/1311868549
 " http://code-life.net/?p=1679
+" http://d.hatena.ne.jp/hogem/20100122/1264169093
+" http://www.hidekik.com/cookbook/p2h.cgi?id=smtptext
+"
+" 添付ファイルは？？？
+" 返信
+" エラー処理
+" リファクタリング
 "
 
 let s:gmail_search_key = 'ALL'
@@ -16,7 +21,11 @@ let s:gmail_title_prefix = 'gmail-'
 let s:gmail_timeout = 200
 let s:gmail_mailbox_idx = 0
 let s:gmail_encoding = ''
-let [ s:MODE_MAILBOX, s:MODE_LIST, s:MODE_BODY ] = range(3)
+let s:gmail_body_separator = '                                                                  '
+let s:gmail_sendmail_menu  = 'send                                                              '
+let s:gmail_wname = [ 'mailbox', 'list', 'body', 'create' ]
+let s:gmail_headers = [ 'To:', 'Cc:', 'Bcc:', 'Subject:' ]
+let [ s:MODE_MAILBOX, s:MODE_LIST, s:MODE_BODY, s:MODE_CREATE ] = range(4)
 
 function! gmail#start()
   call s:login()
@@ -63,6 +72,24 @@ function! gmail#open()
       call s:setline(line('.'), ' ' . cline[1:])
       call s:body(line[0])
     endif
+  elseif s:mode() == s:MODE_CREATE
+    if l == 1
+      if expand('<cword>') == 'send'
+        let messages = getline(2, line('$'))
+        let to = ''
+        for msg in messages
+          if msg =~ "^To:" || msg =~ "^Cc:" || msg =~ "^Bcc:"
+            let to = msg[4:]
+            call s:sendmail(to, messages)
+          else
+            break
+          endif
+        endfor
+        if to == ''
+          call s:message('Specify the rcpt to')
+        endif
+      endif
+    endif
   endif
 endfunction
 
@@ -92,6 +119,13 @@ function! gmail#search()
   endif
 endfunction
 
+function! gmail#create()
+  call s:openWindow(s:MODE_CREATE)
+  call s:setline(1, [ s:gmail_sendmail_menu, "To:", "Cc:", "Bcc:", "Subject:", "", g:gmail_signature ])
+  call s:hilightLine('gmailHorizontal', 1)
+  setl modifiable
+endfunction
+
 function! s:login()
   let s:gmail_login_now = 1
   call s:openWindow(s:MODE_MAILBOX)
@@ -104,24 +138,7 @@ function! s:login()
 
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_server, '-quiet']
   let s:sub = vimproc#popen3(cmd)
-  let cnt = 0
-  while !s:sub.stdout.eof
-    let line = substitute(s:sub.stdout.read(), nr2char(10), '', 'g')
-    if line != ''
-      call s:message(line)
-      if stridx(line, '* OK') >= 0
-        break
-      endif
-    else
-      sleep 10ms
-      let cnt += 1
-      if cnt >= s:gmail_timeout
-        call s:message('login timeout!!')
-        let s:gmail_login_now = 0
-        return
-      endif
-    endif
-  endwhile
+  call s:response(s:sub, '* OK')
 
   call s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass)
   let s:gmail_login_now = 0
@@ -251,7 +268,7 @@ function! s:list(page, clear)
       elseif r =~ '=?.*?='
         let mail .= s:decodeMime(r)
       else
-        let parts = split(r, ': ')
+        let parts = split(r, ':')
         if len(parts) > 1
           let mail .= parts[1] . ' '
         endif
@@ -288,7 +305,7 @@ function! s:body(id)
       call add(list, r)
     endif
   endfor
-  call add(list, '                                                                  ')
+  call add(list, s:gmail_body_separator)
   call s:setline(1, list)
   call s:hilightLine('gmailHorizontal', len(list))
   let res = s:request("? FETCH " . a:id . " RFC822.TEXT")
@@ -311,15 +328,31 @@ function! s:request(cmd)
     endif
   endtry
 
+  let ret = s:response(s:sub, '? ')
+  if empty(ret)
+    if s:gmail_login_now == 0
+      let s:gmail_login_now = 1
+      call s:relogin()
+      let ret = s:request(a:cmd)
+      let s:gmail_login_now = 0
+      return ret
+    endif
+  endif
+  return ret
+
+endfunction
+
+function! s:response(vp, end)
   let cnt = 0
   let res = ''
   let end = 0
-  while !s:sub.stdout.eof
-    let line = substitute(s:sub.stdout.read(), nr2char(10), '', 'g')
+  while !a:vp.stdout.eof
+    let line = substitute(a:vp.stdout.read(), nr2char(10), '', 'g')
     if line != ''
       let res = res . line
       for line2 in split(line, "\r")
-        if stridx(line2, '? ') == 0
+        "call s:message(line2)
+        if line2 =~ a:end
           let end = 1
           break
         endif
@@ -332,30 +365,107 @@ function! s:request(cmd)
       let cnt += 1
       if cnt >= s:gmail_timeout
         call s:message('request timeout!!')
-        if s:gmail_login_now == 0
-          let s:gmail_login_now = 1
-          call s:relogin()
-          let ret = s:request(a:cmd)
-          let s:gmail_login_now = 0
-          return ret
-        else
-          return []
-        endif
+        return []
       endif
     endif
   endwhile
   return split(res, "\r")
 endfunction
 
-function! s:openWindow(mode)
-  let pref = ''
-  if a:mode == s:MODE_MAILBOX
-    let pref = 'mailbox'
-  elseif a:mode == s:MODE_LIST
-    let pref = 'list'
-  elseif a:mode == s:MODE_BODY
-    let pref = 'body'
+function! s:sendmail(to, messages)
+  let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_smtp, '-quiet']
+  let sub = vimproc#popen3(cmd)
+  let ret = s:response(sub, '^\d\d\d ')
+  if empty(ret)
+    call sub.kill(9)
+    unlet sub
+    return
   endif
+
+  let bytes = [ 0 ]
+  call extend(bytes, s:str2bytes(g:gmail_user_name))
+  call add(bytes, 0)
+  call extend(bytes, s:str2bytes(g:gmail_user_pass))
+  let AUTH = s:encodeBase64(bytes) . "\r\n"
+
+  let bidx = 0
+  for msg in a:messages
+    let lidx = stridx(msg, ':')
+    if lidx != -1
+      let label = msg[ 0 : lidx ]
+      if index(s:gmail_headers, label) == -1
+        break
+      endif
+    else
+      break
+    endif
+    let bidx += 1
+  endfor
+
+  let contents = [
+           \  "MIME-Version: 1.0",
+           \  "Content-type: text/plain; charset=" . g:gmail_default_encoding,
+           \  "Content-Transfer-Encoding: 7bit",
+           \ ]
+  if bidx > 0
+    for header in a:messages[ 0 : bidx-1 ]
+      let lidx = stridx(header, ': ')
+      let label = header[ 0 : lidx+1 ]
+      let value = header[ lidx+2 : ]
+      if empty(value)
+        let encoded_msg = label
+      else
+        let encoded_msg = label . s:encodeMime(value)
+      endif
+      call add(contents, encoded_msg)
+    endfor
+  endif
+  call add(contents, "")
+  call extend(contents, map(a:messages[ bidx : ], "iconv(v:val, &enc, s:gmail_encoding)"))
+
+  let commands =
+    \[
+    \  "EHLO LOCALHOST\r\n",
+    \  "AUTH PLAIN\r\n",
+    \  AUTH,
+    \  "MAIL FROM:<" . g:gmail_user_name . ">\r\n",
+    \  "RCPT TO:<" . a:to . ">\r\n",
+    \  "DATA\r\n",
+    \  join(contents, "\r\n") . "\r\n.\r\n",
+    \  "QUIT \r\n",
+    \]
+
+  let err = 0
+  for command in commands
+    try
+      call sub.stdin.write(command)
+    catch /.*/
+      call s:message('write error')
+      let err = 1
+      break
+    endtry
+    let ret = s:response(sub, '^\d\d\d ')
+    call s:message(string(ret))
+    if empty(ret)
+      let err = 1
+      break
+    endif
+  endfor
+
+  call sub.kill(9)
+  unlet sub
+
+  if err == 0
+    call s:message('send mail ok.')
+    call s:openWindow(s:MODE_BODY)
+  else
+    call s:message('send mail error!!')
+  endif
+
+endfunction
+
+function! s:openWindow(mode)
+  let pref = s:gmail_wname[a:mode]
   let bufname = s:gmail_title_prefix . pref
 
   let winnum = winnr('$')
@@ -375,13 +485,21 @@ function! s:openWindow(mode)
     wincmd K
     exe 'res ' . string(g:gmail_page_size+1)
   else
+    let finded = 0
     let winnum = winnr('$')
     for winno in range(1, winnum)
       let bn = bufname(winbufnr(winno))
-      if stridx(bn, s:gmail_title_prefix) != 0
+      let title_mbox = s:gmail_title_prefix . s:gmail_wname[s:MODE_MAILBOX]
+      let title_list = s:gmail_title_prefix . s:gmail_wname[s:MODE_LIST]
+      if bn != title_mbox && bn != title_list
          exe winno . "wincmd w"
+         let finded = 1
       endif
     endfor
+    if finded == 0
+      botright new
+      wincmd J
+    endif
   endif
 
   silent edit `=bufname`
@@ -396,6 +514,7 @@ function! s:openWindow(mode)
   nnoremap <buffer> <CR> :call gmail#open()<CR>
   nnoremap <buffer> u    :call gmail#update()<CR>
   nnoremap <buffer> s    :call gmail#search()<CR>
+  nnoremap <buffer> c    :call gmail#create()<CR>
 
 endfunction
 
@@ -404,6 +523,15 @@ function! s:decodeUtf7(str)
   let mod2 = substitute(mod1, '&-', '&', 'g')
   let mod3 = substitute(mod2, ',', '/', 'g')
   return iconv(mod3, 'UTF-7', &enc)
+endfunction
+
+function! s:encodeMime(str)
+  return
+    \ '=?' .
+    \ g:gmail_default_encoding .
+    \ '?B?' .
+    \ s:encodeBase64Str(iconv(a:str, &enc, g:gmail_default_encoding)) . 
+    \ '?='
 endfunction
 
 function! s:decodeMime(str)
@@ -438,12 +566,14 @@ endfunction
 
 function! s:mode()
   let bufname = bufname('%')
-  if bufname =~ s:gmail_title_prefix . 'mailbox'
+  if bufname =~ s:gmail_title_prefix . s:gmail_wname[s:MODE_BODY]
     return s:MODE_MAILBOX
-  elseif bufname =~ s:gmail_title_prefix . 'list'
+  elseif bufname =~ s:gmail_title_prefix . s:gmail_wname[s:MODE_LIST]
     return s:MODE_LIST
-  elseif bufname =~ s:gmail_title_prefix . 'body'
+  elseif bufname =~ s:gmail_title_prefix . s:gmail_wname[s:MODE_BODY]
     return s:MODE_BODY
+  elseif bufname =~ s:gmail_title_prefix . s:gmail_wname[s:MODE_CREATE]
+    return s:MODE_CREATE
   endif
   return -1
 endfunction
@@ -466,8 +596,13 @@ let s:standard_table = [
       \ "g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v",
       \ "w","x","y","z","0","1","2","3","4","5","6","7","8","9","+","/"]
 
-function! s:encodeBase64(data)
+function! s:encodeBase64Str(data)
   let b64 = s:b64encode(s:str2bytes(a:data), s:standard_table, '=')
+  return join(b64, '')
+endfunction
+
+function! s:encodeBase64(bytes)
+  let b64 = s:b64encode(a:bytes, s:standard_table, '=')
   return join(b64, '')
 endfunction
 
@@ -527,5 +662,9 @@ endfunction
 
 function! s:bytes2str(bytes)
   return eval('"' . join(map(copy(a:bytes), 'printf(''\x%02x'', v:val)'), '') . '"')
+endfunction
+
+function! s:str2bytes(str)
+  return map(range(len(a:str)), 'char2nr(a:str[v:val])')
 endfunction
 

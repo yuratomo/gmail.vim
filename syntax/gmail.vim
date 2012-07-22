@@ -19,7 +19,7 @@ syn match   gmailQuote2     "^>>[^.].*$"
 syn match   gmailQuote3     "^>>>[^.].*$"
 syn match   gmailQuote4     "^>>>>[^.].*$"
 syn match   gmailQuote5     "^>>>>>[^.].*$"
-syn match   gmailLabel      "^[^ ]\{2,10\}:"
+syn match   gmailLabel      "^[^ Å@]\{2,10\}:"
 
 hi default link gmailPrevNext   PmenuSel
 hi default link gmailLabel      StatusLine
