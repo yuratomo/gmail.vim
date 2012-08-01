@@ -28,7 +28,9 @@ if !exists('g:gmail_default_encoding')
 endif
 
 if !exists('g:gmail_signature')
-  let g:gmail_signature = "// signathre"
+  if exists('g:gmail_user_name')
+    let g:gmail_signature = '# ' . g:gmail_user_name . '(by gmail.vim)'
+  endif
 endif
 
 command! -nargs=0 Gmail :call gmail#start()
