@@ -7,8 +7,8 @@ if !exists('g:gmail_command')
   let g:gmail_command = 'openssl'
 endif
 
-if !exists('g:gmail_server')
-  let g:gmail_server = 'imap.gmail.com:993'
+if !exists('g:gmail_imap')
+  let g:gmail_imap = 'imap.gmail.com:993'
 endif
 
 if !exists('g:gmail_smtp')
