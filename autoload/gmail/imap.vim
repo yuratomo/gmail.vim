@@ -1,8 +1,8 @@
 let s:gmail_mailbox_idx = 0
 let s:gmail_body_separator = '                                                                  '
+let s:gmail_body_menu  = '[reply] [reply_all] [forward]                                     '
 
 function! gmail#imap#login()
-  let s:gmail_login_now = 1
   call gmail#win#open(g:GMAIL_MODE_MAILBOX)
   if !exists('g:gmail_user_name')
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
@@ -14,13 +14,17 @@ function! gmail#imap#login()
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
   let s:sub = vimproc#popen3(cmd)
   let ret = gmail#util#response(s:sub, '* OK', g:gmail_timeout)
+  if empty(ret)
+    return 0
+  endif
+
+  let s:gmail_login_now = 1
+  let ret = s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass, g:gmail_timeout)
   let s:gmail_login_now = 0
   if empty(ret)
     return 0
   endif
 
-  call s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass, g:gmail_timeout)
-  let s:gmail_login_now = 0
   return 1
 endfunction
 
@@ -59,7 +63,7 @@ endfunction
 
 function! gmail#imap#update_mailbox(mode, clear)
   if a:clear
-    call gmail#imap#clear_mailbox()
+    unlet s:gmail_mailbox
   endif
   call gmail#win#open(g:GMAIL_MODE_MAILBOX)
   call gmail#win#clear()
@@ -121,6 +125,10 @@ function! s:clear_list()
   if exists('s:gmail_uids')
     unlet s:gmail_uids
   endif
+endfunction
+
+function! gmail#imap#next_list()
+  call gmail#imap#update_list(s:gmail_page+1, 0)
 endfunction
 
 function! gmail#imap#update_list(page, clear)
@@ -188,7 +196,7 @@ function! gmail#imap#update_list(page, clear)
       endif
     endfor
 
-    call add(s:gmail_list, 'next  search:' . g:gmail_search_key)
+    call add(s:gmail_list, '[next]  search:' . g:gmail_search_key)
   endif
 
   call gmail#win#clear()
@@ -202,10 +210,14 @@ function! gmail#imap#update_list(page, clear)
   let s:gmail_page = a:page
 endfunction
 
+"
+" body
+"
 function! gmail#imap#body(id)
   call gmail#win#open(g:GMAIL_MODE_BODY)
   call gmail#win#clear()
-  let res = s:request("? FETCH " . a:id . " (body[header.fields (from to subject date)])", g:gmail_timeout)
+  let res = s:request("? FETCH " . a:id . " (BODY[HEADER.FIELDS (FROM TO SUBJECT DATE)])", g:gmail_timeout)
+  "let res = s:request("? FETCH " . a:id . " (FLAGS BODY.PEEK[HEADER.FIELDS (SUBJECT DATE FROM )])", g:gmail_timeout)
   let list = []
   let mail = ''
   for r in res[1:-4]
@@ -219,8 +231,9 @@ function! gmail#imap#body(id)
     endif
   endfor
   call add(list, s:gmail_body_separator)
-  call gmail#win#setline(1, list)
-  call gmail#win#hilightLine('gmailHorizontal', len(list))
+  call gmail#win#setline(1, s:gmail_body_menu)
+  call gmail#win#setline(2, list)
+  call gmail#win#hilightLine('gmailHorizontal', len(list)+1)
   let res = s:request("? FETCH " . a:id . " RFC822.TEXT", g:gmail_timeout)
   call gmail#win#setline(line('$')+1, map(res[1 : -3], "iconv(v:val, g:gmail_encoding, &enc)"))
 endfunction
@@ -240,7 +253,7 @@ function! s:request(cmd, timeout)
   catch /.*/
     if s:gmail_login_now == 0
       if s:relogin() == 0
-        return
+        return []
       endif
       call s:sub.stdin.write(cmd)
     endif
@@ -251,7 +264,7 @@ function! s:request(cmd, timeout)
     if s:gmail_login_now == 0
       let s:gmail_login_now = 1
       if s:relogin() == 0
-        return
+        return []
       endif
       let ret = s:request(a:cmd, a:timeout)
       let s:gmail_login_now = 0

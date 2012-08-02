@@ -5,7 +5,6 @@ elseif exists("b:current_syntax")
 endif
 
 source $VIMRUNTIME/syntax/html.vim
-syn keyword gmailPrevNext   prev next
 syn keyword gmailSearch     search
 syn keyword gmailWeek       Wed Mon Mon Fri Thu Wed Tue Tue Sun
 syn keyword gmailMonth      Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
@@ -20,8 +19,18 @@ syn match   gmailQuote3     "^>>>[^>].*$"
 syn match   gmailQuote4     "^>>>>[^>].*$"
 syn match   gmailQuote5     "^>>>>>[^>].*$"
 syn match   gmailLabel      "^[^ Å@]\{2,10\}:"
+syn match   gmailButton1    "\[next\]"
+syn match   gmailButton2    "\[send\]"
+syn match   gmailButton3    "\[reply\]"
+syn match   gmailButton4    "\[reply_all\]"
+syn match   gmailButton5    "\[forward\]"
 
-hi default link gmailPrevNext   PmenuSel
+hi default link gmailButton1    WildMenu
+hi default link gmailButton2    WildMenu
+hi default link gmailButton3    WildMenu
+hi default link gmailButton4    WildMenu
+hi default link gmailButton5    WildMenu
+hi default link gmailButton6    WildMenu
 hi default link gmailLabel      StatusLine
 hi default link gmailSearch     Title
 hi default link gmailWeek       Boolean

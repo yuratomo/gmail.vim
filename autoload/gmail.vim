@@ -17,7 +17,7 @@
 " - multipart/mime
 
 let g:gmail_timeout_for_unseen = 5000
-let g:gmail_timeout = 1000
+let g:gmail_timeout = 2000
 let g:gmail_search_key = 'ALL'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
 
@@ -50,13 +50,23 @@ function! gmail#open()
     call gmail#imap#update_list(0, 1)
   elseif gmail#win#mode() == g:GMAIL_MODE_LIST
     if l == line('$')
-      call gmail#imap#update_list(s:gmail_page+1, 0)
+      call gmail#imap#next_list()
     else
       call gmail#win#hilightLine('gmailSelect', l)
       let cline = getline('.')
       let line = split(cline[1:], ' ')
       call gmail#win#setline(line('.'), ' ' . cline[1:])
       call gmail#imap#body(line[0])
+    endif
+  elseif gmail#win#mode() == g:GMAIL_MODE_BODY
+    if l == 1
+      if expand('<cword>') == 'reply'
+        call gmail#smtp#reply()
+      elseif expand('<cword>') == 'reply_all'
+        call gmail#smtp#reply_all()
+      elseif expand('<cword>') == 'forward'
+        call gmail#smtp#forward()
+      endif
     endif
   elseif gmail#win#mode() == g:GMAIL_MODE_CREATE
     if l == 1
@@ -82,3 +92,8 @@ function! gmail#search()
   endif
 endfunction
 
+function! gmail#back()
+  if gmail#win#mode() == g:GMAIL_MODE_CREATE
+    call gmail#win#open(g:GMAIL_MODE_BODY)
+  endif
+endfunction

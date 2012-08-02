@@ -1,6 +1,6 @@
 
 let s:gmail_title_prefix = 'gmail-'
-let s:gmail_winname = [ 'mailbox', 'list', 'body', 'create' ]
+let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new' ]
 
 function! gmail#win#open(mode)
   let pref = s:gmail_winname[a:mode]
@@ -50,9 +50,10 @@ function! gmail#win#open(mode)
   augroup END
 
   nnoremap <buffer> <CR> :call gmail#open()<CR>
+  nnoremap <buffer> <BS> :call gmail#back()<CR>
   nnoremap <buffer> u    :call gmail#update()<CR>
   nnoremap <buffer> s    :call gmail#search()<CR>
-  nnoremap <buffer> c    :call gmail#smtp#open()<CR>
+  nnoremap <buffer> c    :call gmail#smtp#open('',[],'')<CR>
 endfunction
 
 function! gmail#win#setline(idx, txt)

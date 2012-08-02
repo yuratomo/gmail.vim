@@ -1,9 +1,45 @@
-let s:gmail_sendmail_menu  = 'send                                                              '
+let s:gmail_sendmail_menu  = '[send]                                                            '
 let s:gmail_sendmail_headers = [ 'To:', 'Cc:', 'Bcc:', 'Subject:' ]
 
-function! gmail#smtp#open()
+function! gmail#smtp#reply()
+  let to = ''
+  let subject = ''
+  let messages = getline(2, line('$'))
+  for msg in messages
+    if msg =~ "^From:"
+      let to = msg[5:]
+      break
+    elseif msg =~ "^.*:"
+    else
+      break
+    endif
+  endfor
+  call gmail#smtp#open(to, [], 'Re:' . subject)
+endfunction
+
+function! gmail#smtp#reply_all()
+  let to = ''
+  let subject = ''
+  let messages = getline(2, line('$'))
+  for msg in messages
+    if msg =~ "^From:"
+      let to = msg[5:]
+      break
+    elseif msg =~ "^.*:"
+    else
+      break
+    endif
+  endfor
+  call gmail#smtp#open(to, [], 'Re:' . subject)
+endfunction
+
+function! gmail#smtp#forward()
+  call gmail#smtp#open('', [], 'Fw:')
+endfunction
+
+function! gmail#smtp#open(to, cc, subject)
   call gmail#win#open(g:GMAIL_MODE_CREATE)
-  call gmail#win#setline(1, [ s:gmail_sendmail_menu, "To:", "Cc:", "Bcc:", "Subject:", "", g:gmail_signature ])
+  call gmail#win#setline(1, [ s:gmail_sendmail_menu, "To:" . a:to, "Cc:", "Bcc:", "Subject:" . a:subject, "", g:gmail_signature ])
   call gmail#win#hilightLine('gmailHorizontal', 1)
   setl modifiable
 endfunction
