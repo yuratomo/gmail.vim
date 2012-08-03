@@ -1,46 +1,15 @@
-let s:gmail_sendmail_menu  = '[send]                                                            '
 let s:gmail_sendmail_headers = [ 'To:', 'Cc:', 'Bcc:', 'Subject:' ]
-
-function! gmail#smtp#reply()
-  let to = ''
-  let subject = ''
-  let messages = getline(2, line('$'))
-  for msg in messages
-    if msg =~ "^From:"
-      let to = msg[5:]
-      break
-    elseif msg =~ "^.*:"
-    else
-      break
-    endif
-  endfor
-  call gmail#smtp#open(to, [], 'Re:' . subject)
-endfunction
-
-function! gmail#smtp#reply_all()
-  let to = ''
-  let subject = ''
-  let messages = getline(2, line('$'))
-  for msg in messages
-    if msg =~ "^From:"
-      let to = msg[5:]
-      break
-    elseif msg =~ "^.*:"
-    else
-      break
-    endif
-  endfor
-  call gmail#smtp#open(to, [], 'Re:' . subject)
-endfunction
-
-function! gmail#smtp#forward()
-  call gmail#smtp#open('', [], 'Fw:')
-endfunction
 
 function! gmail#smtp#open(to, cc, subject)
   call gmail#win#open(g:GMAIL_MODE_CREATE)
-  call gmail#win#setline(1, [ s:gmail_sendmail_menu, "To:" . a:to, "Cc:", "Bcc:", "Subject:" . a:subject, "", g:gmail_signature ])
-  call gmail#win#hilightLine('gmailHorizontal', 1)
+  call gmail#win#clear()
+  call gmail#win#setline(1, [ '[send]', "To: " . a:to])
+  if !empty(a:cc)
+    call gmail#win#setline(3, map(a:cc, '"Cc: " . v:val'))
+  else
+    call gmail#win#setline(3, "Cc: ")
+  endif
+  call gmail#win#setline(line('$')+1, [ "Bcc: ", "Subject: " . a:subject, "", g:gmail_signature ])
   setl modifiable
 endfunction
 
@@ -48,10 +17,12 @@ function! gmail#smtp#send()
   let messages = getline(2, line('$'))
   let to = []
   for msg in messages
-    if msg =~ "^To:" || msg =~ "^Cc:"
-      call add(to, msg[3:])
+    if msg =~ "^To:"
+      call add(to, substitute(msg, '^To:\s\?', '', ''))
+    elseif msg =~ "^Cc:"
+      call add(to, substitute(msg, '^Cc:\s\?', '', ''))
     elseif msg =~ "^Bcc:"
-      call add(to, msg[4:])
+      call add(to, substitute(msg, '^Bcc:\s\?', '', ''))
     else
       break
     endif
@@ -112,7 +83,8 @@ function! s:sendmail(to, messages)
     endfor
   endif
   call add(contents, "")
-  call extend(contents, map(a:messages[ bidx : ], "iconv(v:val, &enc, g:gmail_encoding)"))
+  call extend(contents, map(a:messages[ bidx : ], "iconv(v:val, &enc, g:gmail_default_encoding)"))
+  call add(contents, "")
 
   let commands =
     \[
@@ -122,7 +94,12 @@ function! s:sendmail(to, messages)
     \  "MAIL FROM:<" . g:gmail_user_name . ">\r\n",
     \ ]
   for t in a:to
-    call add(commands, "RCPT TO:<" . t . ">\r\n")
+    if substitute(t, ' ', '', 'g') == ''
+    elseif t[0] == '<'
+      call add(commands, "RCPT TO:" . t . "\r\n")
+    else
+      call add(commands, "RCPT TO:<" . t . ">\r\n")
+    endif
   endfor
   call extend(commands,
     \[

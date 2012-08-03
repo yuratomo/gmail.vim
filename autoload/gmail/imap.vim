@@ -1,6 +1,8 @@
 let s:gmail_mailbox_idx = 0
-let s:gmail_body_separator = '                                                                  '
-let s:gmail_body_menu  = '[reply] [reply_all] [forward]                                     '
+let s:gmail_body_separator = ''
+let s:gmail_body_menu  = '[reply] [reply_all] [forward]'
+let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
+let s:gmail_headers = {'Cc':[]}
 
 function! gmail#imap#login()
   call gmail#win#open(g:GMAIL_MODE_MAILBOX)
@@ -13,7 +15,7 @@ function! gmail#imap#login()
 
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
   let s:sub = vimproc#popen3(cmd)
-  let ret = gmail#util#response(s:sub, '* OK', g:gmail_timeout)
+  let ret = gmail#util#response(s:sub, '^* OK', g:gmail_timeout_for_body)
   if empty(ret)
     return 0
   endif
@@ -216,26 +218,93 @@ endfunction
 function! gmail#imap#body(id)
   call gmail#win#open(g:GMAIL_MODE_BODY)
   call gmail#win#clear()
-  let res = s:request("? FETCH " . a:id . " (BODY[HEADER.FIELDS (FROM TO SUBJECT DATE)])", g:gmail_timeout)
-  "let res = s:request("? FETCH " . a:id . " (FLAGS BODY.PEEK[HEADER.FIELDS (SUBJECT DATE FROM )])", g:gmail_timeout)
+  let res = s:request("? FETCH " . a:id . " RFC822", g:gmail_timeout)
   let list = []
-  let mail = ''
+  let [ _HEADER, _HEADER_MULTI_MIME_HEADER, _HEADER_MULTI_MIME_BODY, _BODY ] = range(4)
+  let status = _HEADER
+  let enc = g:gmail_default_encoding
+  let b64txt = ''
+  let s:gmail_headers = {}
+  let s:gmail_headers.Cc = []
   for r in res[1:-4]
-    let parts = split(r, ' ')
-    if r == ")"
-      call add(list, mail)
-    elseif r =~ '=?.*?='
-      let mail .= gmail#util#decodeMime(r)
-    else
-      call add(list, r)
+    "call add(list, r) "debug
+    if status == _HEADER
+      if r == ''
+        call add(list, s:gmail_body_separator)
+        "call gmail#win#hilightLine('gmailHorizontal', len(list)+1)
+        let status = _BODY
+      elseif r =~ '^Content-type:\s\?'
+        let enc = s:parse_content_type(r)
+        call gmail#util#message('encoding is ' . enc)
+      else
+        let st = stridx(r, ':')
+        let label = r[ 0 : st-1 ]
+        if index(s:gmail_allow_headers, label) != -1
+          if r =~ '=?.*?='
+            let st = stridx(r, '=?')
+            let encoded_r = r[0:st-1] . gmail#util#decodeMime(r[st+1:])
+          else
+            let encoded_r = r
+          endif
+          call add(list, encoded_r)
+        else
+          let encoded_r = r
+        endif
+        "for header info
+        if r =~ '^Subject:\s\?'
+          let s:gmail_headers.Subject = substitute(encoded_r, 'Subject:\s\?', '', '')
+        elseif r =~ '^Return-Path:\s\?'
+          let s:gmail_headers.Return_Path = substitute(encoded_r, 'Return-Path:\s\?', '', '')
+        elseif r =~ '^Cc:\s\?'
+          call add(s:gmail_headers.Cc, substitute(encoded_r, 'Cc:\s\?', '', ''))
+        endif
+      endif
+    elseif status == _BODY
+      if r =~ '^--'
+        let b64txt = ''
+        let status = _HEADER_MULTI_MIME_HEADER
+      else
+        call add(list, iconv(r, enc, &enc))
+      endif
+    elseif status == _HEADER_MULTI_MIME_HEADER
+      if r =~ '^Content-type:'
+        let enc = s:parse_content_type(r)
+      elseif r == ''
+        let status = _HEADER_MULTI_MIME_BODY
+      endif
+    elseif status == _HEADER_MULTI_MIME_BODY
+      if r =~ '^--'
+        call extend(list, split(iconv(gmail#util#decodeBase64(b64txt), enc, &enc), nr2char(10)))
+        let status = _BODY
+      else
+        let b64txt .= r
+      endif
     endif
   endfor
-  call add(list, s:gmail_body_separator)
   call gmail#win#setline(1, s:gmail_body_menu)
   call gmail#win#setline(2, list)
-  call gmail#win#hilightLine('gmailHorizontal', len(list)+1)
-  let res = s:request("? FETCH " . a:id . " RFC822.TEXT", g:gmail_timeout)
-  call gmail#win#setline(line('$')+1, map(res[1 : -3], "iconv(v:val, g:gmail_encoding, &enc)"))
+  let g:gmail_encoding = enc
+endfunction
+
+function! gmail#imap#get_header()
+  return s:gmail_headers
+endfunction
+
+function! s:parse_content_type(line)
+  let st = stridx(a:line, 'charset=')
+  if st == -1
+    return g:gmail_default_encoding
+  endif
+  let st = st+8
+  if a:line[st] == '"'
+    let st += 1
+  endif
+  let ed = match(a:line, '[\";]', st)
+  if ed == -1
+    let ed = strlen(a:line)
+  endif
+  let enc = a:line[ st : ed-1 ]
+  return enc
 endfunction
 
 "
@@ -259,7 +328,7 @@ function! s:request(cmd, timeout)
     endif
   endtry
 
-  let ret = gmail#util#response(s:sub, '? ', a:timeout)
+  let ret = gmail#util#response(s:sub, '^? ', a:timeout)
   if empty(ret)
     if s:gmail_login_now == 0
       let s:gmail_login_now = 1

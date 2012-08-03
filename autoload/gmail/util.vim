@@ -1,4 +1,4 @@
-let g:gmail_encoding = ''
+"let g:gmail_encoding = ''
 
 function! gmail#util#message(msg)
   echon 'gmail:' . a:msg
@@ -64,8 +64,8 @@ function! gmail#util#decodeMime(str)
   else
     let enc = a:str[ enc_s+2 : enc_e-1 ]
   endif
-  let g:gmail_encoding = enc
-  return iconv(s:decodeBase64(a:str[ start+1 : end-1 ]), enc, &enc)
+  "let g:gmail_encoding = enc
+  return iconv(gmail#util#decodeBase64(a:str[ start+1 : end-1 ]), enc, &enc)
 endfunction
 
 let s:standard_table = [
@@ -84,7 +84,7 @@ function! gmail#util#encodeBase64(bytes)
   return join(b64, '')
 endfunction
 
-function! s:decodeBase64(data)
+function! gmail#util#decodeBase64(data)
   try
     let bytes = s:b64decode(split(a:data, '\zs'), s:standard_table, '=')
     return s:bytes2str(bytes)

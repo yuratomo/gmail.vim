@@ -11,12 +11,10 @@
 "
 " [TODO]
 " - 添付ファイルは？？？
-" - 返信
-" - エラー処理
 " - リファクタリング
-" - multipart/mime
 
 let g:gmail_timeout_for_unseen = 5000
+let g:gmail_timeout_for_body   = 4000
 let g:gmail_timeout = 2000
 let g:gmail_search_key = 'ALL'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
@@ -60,12 +58,13 @@ function! gmail#open()
     endif
   elseif gmail#win#mode() == g:GMAIL_MODE_BODY
     if l == 1
+      let head = gmail#imap#get_header()
       if expand('<cword>') == 'reply'
-        call gmail#smtp#reply()
+        call gmail#smtp#open(head.Return_Path, [], 'Re:' . head.Subject)
       elseif expand('<cword>') == 'reply_all'
-        call gmail#smtp#reply_all()
+        call gmail#smtp#open(head.Return_Path, head.Cc, 'Re:' . head.Subject)
       elseif expand('<cword>') == 'forward'
-        call gmail#smtp#forward()
+        call gmail#smtp#open('', [], 'Fw:' . head.Subject)
       endif
     endif
   elseif gmail#win#mode() == g:GMAIL_MODE_CREATE
