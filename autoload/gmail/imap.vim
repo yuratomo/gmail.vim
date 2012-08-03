@@ -78,7 +78,7 @@ function! gmail#imap#update_mailbox(mode, clear)
       let s = strridx(line, '"', len(line)-2)
       call add(s:gmail_mailbox, { 'name' : line[ s+1 : -2 ] } )
       if a:mode == 1
-        let stat = s:request('? STATUS "' . s:gmail_mailbox[idx-1].name . '" (UNSEEN)')
+        let stat = s:request('? STATUS "' . s:gmail_mailbox[idx-1].name . '" (UNSEEN)', g:gmail_timeout)
         if len(stat) > 1
           let stats = split(stat[0], ' ')
           let unseen = '(' . stats[4]
