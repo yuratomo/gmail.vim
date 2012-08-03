@@ -1,9 +1,10 @@
+let s:gmail_sendmail_normalize_target = [ 'To', 'Cc', 'Bcc' ]
 let s:gmail_sendmail_headers = [ 'To:', 'Cc:', 'Bcc:', 'Subject:' ]
 
 function! gmail#smtp#open(to, cc, subject)
   call gmail#win#open(g:GMAIL_MODE_CREATE)
   call gmail#win#clear()
-  call gmail#win#setline(1, [ '[send]', "To: " . a:to])
+  call gmail#win#setline(1, [ '[send]', "To: " . s:normalize_mail(a:to)])
   if !empty(a:cc)
     call gmail#win#setline(3, map(a:cc, '"Cc: " . v:val'))
   else
@@ -16,6 +17,7 @@ endfunction
 function! gmail#smtp#send()
   let messages = getline(2, line('$'))
   let to = []
+  let header = []
   for msg in messages
     if msg =~ "^To:"
       call add(to, substitute(msg, '^To:\s\?', '', ''))
@@ -30,11 +32,11 @@ function! gmail#smtp#send()
   if empty(to)
     call gmail#util#message('Specify the rcpt to')
   else
-    call s:sendmail(to, messages)
+    call s:sendmail(header, to, messages)
   endif
 endfunction
 
-function! s:sendmail(to, messages)
+function! s:sendmail(header, to, messages)
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_smtp, '-quiet']
   let sub = vimproc#popen3(cmd)
   let ret = gmail#util#response(sub, '^\d\d\d ', g:gmail_timeout)
@@ -69,11 +71,16 @@ function! s:sendmail(to, messages)
            \  "Content-type: text/plain; charset=" . g:gmail_default_encoding,
            \  "Content-Transfer-Encoding: 7bit",
            \ ]
+  call extend(contents, a:header)
   if bidx > 0
     for header in a:messages[ 0 : bidx-1 ]
+      let header = substitute(header, ':\s*', ':', '')
       let lidx = stridx(header, ':')
       let label = header[ 0 : lidx ]
       let value = header[ lidx+1 : ]
+      if index(s:gmail_sendmail_normalize_target, label) != -1
+        let value = s:normalize_mail(value)
+      endif
       if empty(value)
         let encoded_msg = label
       else
@@ -83,7 +90,7 @@ function! s:sendmail(to, messages)
     endfor
   endif
   call add(contents, "")
-  call extend(contents, map(a:messages[ bidx : ], "iconv(v:val, &enc, g:gmail_default_encoding)"))
+  call extend(contents, split(iconv(join(a:messages[ bidx : ], "\n"), &enc, g:gmail_default_encoding), "\n"))
   call add(contents, "")
 
   let commands =
@@ -94,13 +101,9 @@ function! s:sendmail(to, messages)
     \  "MAIL FROM:<" . g:gmail_user_name . ">\r\n",
     \ ]
   for t in a:to
-    if substitute(t, ' ', '', 'g') == ''
-    elseif t[0] == '<'
-      call add(commands, "RCPT TO:" . t . "\r\n")
-    else
-      call add(commands, "RCPT TO:<" . t . ">\r\n")
-    endif
+    call add(commands, "RCPT TO:<" . s:normalize_mail(t) . ">\r\n")
   endfor
+
   call extend(commands,
     \[
     \  "DATA\r\n",
@@ -137,3 +140,8 @@ function! s:sendmail(to, messages)
 
 endfunction
 
+function! s:normalize_mail(t)
+  let t = substitute(a:t, '.*<', '', '')
+  let t = substitute(t,   '>.*', '', '')
+  return  substitute(t,   ' ', '', 'g')
+endfunction

@@ -12,7 +12,7 @@
 " [TODO]
 " - 添付ファイルは？？？
 " - リファクタリング
-
+"
 let g:gmail_timeout_for_unseen = 5000
 let g:gmail_timeout_for_body   = 4000
 let g:gmail_timeout = 2000
@@ -20,9 +20,24 @@ let g:gmail_search_key = 'ALL'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
 
 function! gmail#start()
+  " check depend
+  if !has('iconv')
+    call gmail#util#message('gmail.vim is depend on  iconv. Please install it.')
+    return
+  endif
+  if !exists('g:loaded_vimproc')
+    call gmail#util#message("gmail.vim is depend on vimproc. Please install it.")
+    return
+  endif
+  if !executable('openssl')
+    call gmail#util#message("gmail.vim is depend on openssl. Please install it.")
+    return
+  endif
+
   if gmail#imap#login() == 0
     return
   endif
+
   call gmail#imap#update_mailbox(0, 0)
   if g:gmail_default_mailbox != ''
     let mbidx = -1

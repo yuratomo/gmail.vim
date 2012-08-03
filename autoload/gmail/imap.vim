@@ -231,7 +231,6 @@ function! gmail#imap#body(id)
     if status == _HEADER
       if r == ''
         call add(list, s:gmail_body_separator)
-        "call gmail#win#hilightLine('gmailHorizontal', len(list)+1)
         let status = _BODY
       elseif r =~ '^Content-type:\s\?'
         let enc = s:parse_content_type(r)
