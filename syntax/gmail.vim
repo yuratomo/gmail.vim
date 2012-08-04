@@ -25,6 +25,8 @@ syn match   gmailButton3    "\[reply\]"
 syn match   gmailButton4    "\[reply_all\]"
 syn match   gmailButton5    "\[forward\]"
 syn match   gmailButton6    "\[easy_html_view\]"
+syn match   gmailFrom       "(From)"
+syn match   gmailTo         "(To)"
 syn match   gmailUrl        contained "\vhttps?://[[:alnum:]][-[:alnum:]]*[[:alnum:]]?(\.[[:alnum:]][-[:alnum:]]*[[:alnum:]]?)*\.[[:alpha:]][-[:alnum:]]*[[:alpha:]]?(:\d+)?(/[^[:space:]]*)?$"
 syn match   gmailUrl        "http[s]\=://\S*"
 syn match   gmailBracket1   /Åu\_.\{-0,30}Åv/
@@ -37,6 +39,8 @@ hi default link gmailButton3    WildMenu
 hi default link gmailButton4    WildMenu
 hi default link gmailButton5    WildMenu
 hi default link gmailButton6    WildMenu
+hi default link gmailFrom       Statement
+hi default link gmailTo         Statement
 hi default link gmailLabel      StatusLine
 hi default link gmailSearch     Title
 hi default link gmailWeek       Boolean

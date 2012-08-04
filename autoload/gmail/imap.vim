@@ -182,13 +182,20 @@ function! gmail#imap#update_list(page, clear)
       let ins_pos = len(s:gmail_list)
     endif
 
-    let res = s:request("? FETCH " . fs . ":" . fe . " (FLAGS BODY.PEEK[HEADER.FIELDS (SUBJECT DATE FROM )])", g:gmail_timeout)
+    "let res = s:request("? FETCH " . fs . ":" . fe . " (FLAGS BODY.PEEK[HEADER.FIELDS (SUBJECT DATE FROM )])", g:gmail_timeout)
+    let res = s:request("? FETCH " . fs . ":" . fe . " rfc822.header", g:gmail_timeout)
     if empty(res)
       call gmail#util#message('imap fetch error.')
       return
     endif
 
-    let mail = ''
+    let date = ''
+    let subject = ''
+    let from = ''
+    let to = ''
+    let mark = ''
+    let number = ''
+    "let mail = ''
     for r in res
       let parts = split(r, ' ')
       if stridx(r, '*') == 0
@@ -197,15 +204,31 @@ function! gmail#imap#update_list(page, clear)
         else
           let mark = ' '
         endif
-        let mail = mark . parts[1] . ' '
+        "let mail = mark . parts[1] . ' '
+        let number = parts[1]
       elseif r == ")"
-        call insert(s:gmail_list, mail, ins_pos)
-      elseif r =~ '=?.*?='
-        let mail .= gmail#util#decodeMime(r)
+        "call insert(s:gmail_list, mail, ins_pos)
+        call insert(s:gmail_list, join( [ mark, number, date, subject, '(From)' . from, '(To)' . to], ' '), ins_pos)
       else
-        let parts = split(r, ':')
-        if len(parts) > 1
-          let mail .= parts[1] . ' '
+       "let parts = split(r, ':')
+       "if len(parts) > 1
+       "  let mail .= parts[1] . ' '
+       "endif
+        let header = substitute(r, ':\s*', ':', '')
+        let lidx = stridx(header, ':')
+        let label = header[ 0 : lidx-1 ]
+        let value = header[ lidx+1 : ]
+        if value =~ '=?.*?='
+          let value = gmail#util#decodeMime(value)
+        endif
+        if label == 'From'
+          let from = value
+        elseif label == 'To'
+          let to = value
+        elseif label == 'Subject'
+          let subject = value
+        elseif label == 'Date'
+          let date = value
         endif
       endif
     endfor
