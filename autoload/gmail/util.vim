@@ -146,3 +146,24 @@ function! gmail#util#str2bytes(str)
   return map(range(len(a:str)), 'char2nr(a:str[v:val])')
 endfunction
 
+function! gmail#util#neglect_htmltag()
+  setl modifiable
+  :%s/<.\{-\}>//ge
+  :%s/^\s*//ge
+  :%s/^\s*$//ge
+  :%s/\n\n\n//ge
+  :%s/&quot;/"/ge
+  :%s/&laquo;/Å·/ge
+  :%s/&raquo;/Å‚/ge
+  :%s/&lt;/</ge
+  :%s/&gt;/>/ge
+  :%s/&amp;/\&/ge
+  :%s/&yen;/\\/ge
+  :%s/&cent;/Åë/ge
+  :%s/&copy;/c/ge
+  :%s/&apos;/'/ge
+  :%s/&nbsp;/ /ge
+  redraw
+  setl nomodifiable
+endfunction
+

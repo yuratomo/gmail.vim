@@ -30,6 +30,8 @@ endif
 if !exists('g:gmail_signature')
   if exists('g:gmail_user_name')
     let g:gmail_signature = '# ' . g:gmail_user_name . '(by gmail.vim)'
+  else
+    let g:gmail_signature = '# This e-mail was sended by gmail.vim'
   endif
 endif
 

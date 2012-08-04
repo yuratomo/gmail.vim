@@ -4,7 +4,7 @@ elseif exists("b:current_syntax")
   finish
 endif
 
-source $VIMRUNTIME/syntax/html.vim
+"source $VIMRUNTIME/syntax/html.vim
 syn keyword gmailSearch     search
 syn keyword gmailWeek       Wed Mon Mon Fri Thu Wed Tue Tue Sun
 syn keyword gmailMonth      Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec
@@ -24,6 +24,12 @@ syn match   gmailButton2    "\[send\]"
 syn match   gmailButton3    "\[reply\]"
 syn match   gmailButton4    "\[reply_all\]"
 syn match   gmailButton5    "\[forward\]"
+syn match   gmailButton6    "\[easy_html_view\]"
+syn match   gmailUrl        contained "\vhttps?://[[:alnum:]][-[:alnum:]]*[[:alnum:]]?(\.[[:alnum:]][-[:alnum:]]*[[:alnum:]]?)*\.[[:alpha:]][-[:alnum:]]*[[:alpha:]]?(:\d+)?(/[^[:space:]]*)?$"
+syn match   gmailUrl        "http[s]\=://\S*"
+syn match   gmailBracket1   /Åu\_.\{-0,30}Åv/
+syn match   gmailBracket2   /Åw\_.\{-0,30}Åx/
+syn match   gmailBracket3   /Åy\_.\{-0,30}Åz/
 
 hi default link gmailButton1    WildMenu
 hi default link gmailButton2    WildMenu
@@ -46,9 +52,12 @@ hi default link gmailQuote4     Function
 hi default link gmailQuote5     Label
 hi default link gmailSelect     PmenuSel
 hi default link gmailHorizontal Underlined
+hi default link gmailUrl        Comment
+hi default link gmailBracket1   Macro
+hi default link gmailBracket2   Macro
+hi default link gmailBracket3   Macro
 
 hi gmailBold    gui=bold
-"hi default link gmailUnseenMail gmailBold
 hi default link gmailUnseenMail String
 
 let b:current_syntax = 'gmail'

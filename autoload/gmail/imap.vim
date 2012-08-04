@@ -1,6 +1,6 @@
 let s:gmail_mailbox_idx = 0
 let s:gmail_body_separator = ''
-let s:gmail_body_menu  = '[reply] [reply_all] [forward]'
+let s:gmail_body_menu  = '[reply] [reply_all] [forward] [easy_html_view]'
 let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
 let s:gmail_headers = {'Cc':[]}
 
@@ -224,6 +224,7 @@ function! gmail#imap#body(id)
   let status = _HEADER
   let enc = g:gmail_default_encoding
   let b64txt = ''
+  let output_now = 0
   let s:gmail_headers = {}
   let s:gmail_headers.Cc = []
   for r in res[1:-4]
@@ -236,26 +237,32 @@ function! gmail#imap#body(id)
         let enc = s:parse_content_type(r)
         call gmail#util#message('encoding is ' . enc)
       else
-        let st = stridx(r, ':')
-        let label = r[ 0 : st-1 ]
-        if index(s:gmail_allow_headers, label) != -1
+        let coron = stridx(r, ':')
+        let key = r[ 0 : coron-1 ]
+        if index(s:gmail_allow_headers, key) != -1 || ( coron == -1 && output_now == 1 )
           if r =~ '=?.*?='
             let st = stridx(r, '=?')
-            let encoded_r = r[0:st-1] . gmail#util#decodeMime(r[st+1:])
+            let encoded_value = r[0:st-1] . gmail#util#decodeMime(r[st+1:])
           else
-            let encoded_r = r
+            let encoded_value = r
           endif
-          call add(list, encoded_r)
+          if coron == -1 && output_now == 1
+            call add(list, remove(list, -1) . encoded_value)
+          else
+            call add(list, encoded_value)
+          endif
+          let output_now = 1
         else
-          let encoded_r = r
+          let encoded_value = r
+          let output_now = 0
         endif
         "for header info
         if r =~ '^Subject:\s\?'
-          let s:gmail_headers.Subject = substitute(encoded_r, 'Subject:\s\?', '', '')
+          let s:gmail_headers.Subject = substitute(encoded_value, 'Subject:\s\?', '', '')
         elseif r =~ '^Return-Path:\s\?'
-          let s:gmail_headers.Return_Path = substitute(encoded_r, 'Return-Path:\s\?', '', '')
+          let s:gmail_headers.Return_Path = substitute(encoded_value, 'Return-Path:\s\?', '', '')
         elseif r =~ '^Cc:\s\?'
-          call add(s:gmail_headers.Cc, substitute(encoded_r, 'Cc:\s\?', '', ''))
+          call add(s:gmail_headers.Cc, substitute(encoded_value, 'Cc:\s\?', '', ''))
         endif
       endif
     elseif status == _BODY
@@ -276,7 +283,7 @@ function! gmail#imap#body(id)
         call extend(list, split(iconv(gmail#util#decodeBase64(b64txt), enc, &enc), nr2char(10)))
         let status = _BODY
       else
-        let b64txt .= r
+        let b64txt .= r . "\n"
       endif
     endif
   endfor

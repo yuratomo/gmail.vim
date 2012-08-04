@@ -74,12 +74,15 @@ function! gmail#open()
   elseif gmail#win#mode() == g:GMAIL_MODE_BODY
     if l == 1
       let head = gmail#imap#get_header()
-      if expand('<cword>') == 'reply'
+      let menu = expand('<cword>')
+      if menu == 'reply'
         call gmail#smtp#open(head.Return_Path, [], 'Re:' . head.Subject)
-      elseif expand('<cword>') == 'reply_all'
+      elseif menu == 'reply_all'
         call gmail#smtp#open(head.Return_Path, head.Cc, 'Re:' . head.Subject)
-      elseif expand('<cword>') == 'forward'
+      elseif menu == 'forward'
         call gmail#smtp#open('', [], 'Fw:' . head.Subject)
+      elseif menu == 'easy_html_view'
+        call gmail#util#neglect_htmltag()
       endif
     endif
   elseif gmail#win#mode() == g:GMAIL_MODE_CREATE
