@@ -5,7 +5,6 @@ let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
 let s:gmail_headers = {'Cc':[]}
 
 function! gmail#imap#login()
-  call gmail#win#open(g:GMAIL_MODE_MAILBOX)
   if !exists('g:gmail_user_name')
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
   endif
@@ -17,6 +16,7 @@ function! gmail#imap#login()
   let s:sub = vimproc#popen3(cmd)
   let ret = gmail#util#response(s:sub, '^* OK', g:gmail_timeout_for_body)
   if empty(ret)
+    call gmail#util#message('imap connect error.')
     return 0
   endif
 
@@ -24,6 +24,7 @@ function! gmail#imap#login()
   let ret = s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass, g:gmail_timeout)
   let s:gmail_login_now = 0
   if empty(ret)
+    call gmail#util#message('imap login error.')
     return 0
   endif
 
@@ -34,6 +35,7 @@ function! s:relogin()
   let mode = gmail#win#mode()
   call gmail#imap#exit()
   if gmail#imap#login() == 0
+    call gmail#util#message('imap login error.')
     return 0
   endif
   call gmail#imap#select(s:gmail_mailbox_idx)
@@ -105,7 +107,7 @@ function! gmail#imap#select(mb)
 
   let res = s:request("? SEARCH UNSEEN", g:gmail_timeout_for_unseen)
   if len(res) == 0
-    call gmail#util#message('select error(' . a:mb . ')')
+    call gmail#util#message('imap search unseen error(' . a:mb . ')')
     return
   endif
   let uitems = split(res[0], ' ')
@@ -140,6 +142,7 @@ function! gmail#imap#update_list(page, clear)
 
   call gmail#win#open(g:GMAIL_MODE_LIST)
   call clearmatches()
+  call gmail#win#clear()
 
   if !exists('s:gmail_page')
     let s:gmail_page = -1
@@ -149,6 +152,10 @@ function! gmail#imap#update_list(page, clear)
 
     if !exists('s:gmail_uids')
       let res = s:request("? SEARCH " . g:gmail_search_key, g:gmail_timeout)
+      if empty(res)
+        call gmail#util#message('imap search error.')
+        return
+      endif
       let items = split(res[0], ' ')
       let s:gmail_uids = items[ 2 : -1 ]
     endif
@@ -176,6 +183,11 @@ function! gmail#imap#update_list(page, clear)
     endif
 
     let res = s:request("? FETCH " . fs . ":" . fe . " (FLAGS BODY.PEEK[HEADER.FIELDS (SUBJECT DATE FROM )])", g:gmail_timeout)
+    if empty(res)
+      call gmail#util#message('imap fetch error.')
+      return
+    endif
+
     let mail = ''
     for r in res
       let parts = split(r, ' ')
@@ -201,7 +213,6 @@ function! gmail#imap#update_list(page, clear)
     call add(s:gmail_list, '[next]  search:' . g:gmail_search_key)
   endif
 
-  call gmail#win#clear()
   call gmail#win#setline(1, s:gmail_list)
   redraw
 
