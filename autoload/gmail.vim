@@ -56,6 +56,17 @@ function! gmail#start()
   endif
 endfunction
 
+function! s:get_selections()
+  let ids = []
+  for line in getline(1, line('$'))
+    if line[0] == '>'
+      let item = split(line[2:], ' ')
+      call add(ids, item[0])
+    endif
+  endfor
+  return ids
+endfunction
+
 function! gmail#open()
   let l = line('.')
   if gmail#win#mode() == g:GMAIL_MODE_MAILBOX
@@ -63,12 +74,34 @@ function! gmail#open()
     call gmail#imap#update_list(0, 1)
   elseif gmail#win#mode() == g:GMAIL_MODE_LIST
     if l == line('$')
-      call gmail#imap#next_list()
+      let menu = expand('<cword>')
+      if menu == 'next'
+        call gmail#imap#next_list()
+      elseif menu == 'update'
+        call gmail#imap#newly_list()
+      elseif menu == 'unread'
+        for id in s:get_selections()
+          call gmail#imap#store_unseen(id, 1)
+          call gmail#imap#store_seen(id, 0)
+        endfor
+        call gmail#imap#update_list(0, 1)
+      elseif menu == 'readed'
+        for id in s:get_selections()
+          call gmail#imap#store_unseen(id, 0)
+          call gmail#imap#store_seen(id, 1)
+        endfor
+        call gmail#imap#update_list(0, 1)
+      elseif menu == 'delete'
+        for id in s:get_selections()
+          call gmail#imap#store_deleted(id, 1)
+        endfor
+        call gmail#imap#update_list(0, 1)
+      endif
     else
       call gmail#win#hilightLine('gmailSelect', l)
       let cline = getline('.')
-      let line = split(cline[1:], ' ')
-      call gmail#win#setline(line('.'), ' ' . cline[1:])
+      let line = split(cline[2:], ' ')
+      call gmail#win#setline(line('.'), '  ' . cline[2:])
       call gmail#imap#body(line[0])
     endif
   elseif gmail#win#mode() == g:GMAIL_MODE_BODY
@@ -114,3 +147,52 @@ function! gmail#back()
     call gmail#win#open(g:GMAIL_MODE_BODY)
   endif
 endfunction
+
+function! gmail#select(line, direct, mark)
+  if gmail#win#mode() == g:GMAIL_MODE_LIST
+    let l = getline(a:line)
+    if len(l) > 0
+      if a:mark == ''
+        if l[0] == '>'
+          let l = ' ' . l[1:]
+        else
+          let l = '>' . l[1:]
+        endif
+      else
+        let l = a:mark . l[1:]
+      endif
+      call gmail#win#setline(a:line, l)
+      call cursor(line(a:line)+a:direct, 0)
+    endif
+  endif
+endfunction
+
+function! gmail#select_all()
+  let line = getline('.')
+  if line[0] == '>'
+    let mark = ' '
+  else
+    let mark = '>'
+  endif
+
+  for l in range(1, line('$')-1)
+    call gmail#select(l, 0, mark)
+  endfor
+endfunction
+
+function! gmail#tab(direct)
+  if gmail#win#mode() == g:GMAIL_MODE_LIST
+    call cursor('$', 0)
+  elseif gmail#win#mode() == g:GMAIL_MODE_BODY
+    call cursor(1, 0)
+  else
+    return
+  endif
+
+  if a:direct == 1
+    call feedkeys('f[', 'n')
+  else
+    call feedkeys('F[', 'n')
+  endif
+endfunction
+

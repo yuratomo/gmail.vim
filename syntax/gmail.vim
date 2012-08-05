@@ -12,19 +12,23 @@ syn match   gmailTime       "\d\d:\d\d:\d\d"
 syn match   gmailUnseen0    "(0)"
 syn match   gmailUnseenNone "(-)"
 syn match   gmailUnseen     "(\d*)"
-syn match   gmailUnseenMail "^\*.*$"
+syn match   gmailUnseenMail "^ \*.*$"
 syn match   gmailQuote      "^>[^>].*$"
 syn match   gmailQuote2     "^>>[^>].*$"
 syn match   gmailQuote3     "^>>>[^>].*$"
 syn match   gmailQuote4     "^>>>>[^>].*$"
 syn match   gmailQuote5     "^>>>>>[^>].*$"
 syn match   gmailLabel      "^\(From:\|To:\|Subject:\|Cc:\|Bcc:\)"
-syn match   gmailButton1    "\[next\]"
-syn match   gmailButton2    "\[send\]"
-syn match   gmailButton3    "\[reply\]"
-syn match   gmailButton4    "\[reply_all\]"
-syn match   gmailButton5    "\[forward\]"
-syn match   gmailButton6    "\[easy_html_view\]"
+syn match   gmailButton     "\[next\]"
+syn match   gmailButton     "\[send\]"
+syn match   gmailButton     "\[reply\]"
+syn match   gmailButton     "\[reply_all\]"
+syn match   gmailButton     "\[forward\]"
+syn match   gmailButton     "\[easy_html_view\]"
+syn match   gmailButton     "\[update\]"
+syn match   gmailButton     "\[unread\]"
+syn match   gmailButton     "\[readed]"
+syn match   gmailButton     "\[delete\]"
 syn match   gmailFrom       "(From)"
 syn match   gmailTo         "(To)"
 syn match   gmailUrl        contained "\vhttps?://[[:alnum:]][-[:alnum:]]*[[:alnum:]]?(\.[[:alnum:]][-[:alnum:]]*[[:alnum:]]?)*\.[[:alpha:]][-[:alnum:]]*[[:alpha:]]?(:\d+)?(/[^[:space:]]*)?$"
@@ -33,12 +37,7 @@ syn match   gmailBracket1   /Åu\_.\{-0,30}Åv/
 syn match   gmailBracket2   /Åw\_.\{-0,30}Åx/
 syn match   gmailBracket3   /Åy\_.\{-0,30}Åz/
 
-hi default link gmailButton1    WildMenu
-hi default link gmailButton2    WildMenu
-hi default link gmailButton3    WildMenu
-hi default link gmailButton4    WildMenu
-hi default link gmailButton5    WildMenu
-hi default link gmailButton6    WildMenu
+hi default link gmailButton     WildMenu
 hi default link gmailFrom       Statement
 hi default link gmailTo         Statement
 hi default link gmailLabel      StatusLine
