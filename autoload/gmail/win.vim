@@ -216,13 +216,13 @@ function! gmail#win#show_body(id)
   call gmail#win#setline(2, list)
 endfunction
 
-function! s:force_select()
+function! gmail#win#reselect()
   call gmail#win#open(g:GMAIL_MODE_MAILBOX)
   call gmail#imap#select(gmail#imap#mailbox_index())
 endfunction
 
 function! gmail#win#newly_list()
-  call s:force_select()
+  call gmail#win#reselect()
   call gmail#win#open(g:GMAIL_MODE_LIST)
   let newly_uids = gmail#imap#search_uids(g:gmail_search_key)
 
@@ -260,7 +260,6 @@ endfunction
 function! gmail#win#update_list(page, clear)
   if a:clear
     call s:clear_list()
-    call s:force_select()
   endif
 
   call gmail#win#open(g:GMAIL_MODE_LIST)

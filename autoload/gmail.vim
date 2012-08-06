@@ -77,6 +77,7 @@ function! gmail#open()
             call gmail#imap#store_unseen(id, 1)
             call gmail#imap#store_seen(id, 0)
           endfor
+          call gmail#win#reselect()
           call gmail#win#update_list(0, 1)
         endif
       elseif menu == 'readed'
@@ -88,6 +89,7 @@ function! gmail#open()
             call gmail#imap#store_unseen(id, 0)
             call gmail#imap#store_seen(id, 1)
           endfor
+          call gmail#win#reselect()
           call gmail#win#update_list(0, 1)
         endif
       elseif menu == 'delete'
@@ -98,6 +100,7 @@ function! gmail#open()
           for id in ids
             call gmail#imap#store_deleted(id, 1)
           endfor
+          call gmail#win#reselect()
           call gmail#win#update_list(0, 1)
         endif
       endif
