@@ -1,7 +1,5 @@
 let s:gmail_mailbox_idx = 0
 let s:gmail_body_separator = ''
-let s:gmail_list_menu = ' [next] [update] [unread] [readed] [delete]'
-let s:gmail_body_menu = ' [reply] [reply_all] [forward] [easy_html_view]'
 let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
 let s:gmail_headers = {'Cc':[]}
 
@@ -33,14 +31,12 @@ function! gmail#imap#login()
 endfunction
 
 function! s:relogin()
-  let mode = gmail#win#mode()
   call gmail#imap#exit()
   if gmail#imap#login() == 0
     call gmail#util#message('imap login error.')
     return 0
   endif
   call gmail#imap#select(s:gmail_mailbox_idx)
-  call gmail#win#open(mode)
   return 1
 endfunction
 
@@ -58,159 +54,68 @@ function! gmail#imap#exit()
   endif
 endfunction
 
-"
-" mailbox
-"
 function! gmail#imap#get_mailbox()
   return s:gmail_mailbox
 endfunction
 
-function! gmail#imap#update_mailbox(mode, clear)
-  if a:clear
-    unlet s:gmail_mailbox
-  endif
-  call gmail#win#open(g:GMAIL_MODE_MAILBOX)
-  call gmail#win#clear()
-  if !exists('s:gmail_mailbox')
-    let idx = 1
-    let s:gmail_mailbox = []
-    let s:gmail_maibox_line = []
-    let results = s:request('? LIST "" "*"', g:gmail_timeout)
-    for line in results[ 0 : -2 ]
-      let s = strridx(line, '"', len(line)-2)
-      call add(s:gmail_mailbox, { 'name' : line[ s+1 : -2 ] } )
-      if a:mode == 1
-        let stat = s:request('? STATUS "' . s:gmail_mailbox[idx-1].name . '" (UNSEEN)', g:gmail_timeout)
-        if len(stat) > 1
-          let stats = split(stat[0], ' ')
-          let unseen = '(' . stats[4]
-        else
-          let unseen = ''
-        endif
-      else 
-        let unseen = '(-)'
+function! gmail#imap#list(mode)
+  let idx = 1
+  let s:gmail_mailbox = []
+  let s:gmail_maibox_line = []
+  let results = s:request('? LIST "" "*"', g:gmail_timeout)
+  for line in results[ 0 : -2 ]
+    let s = strridx(line, '"', len(line)-2)
+    call add(s:gmail_mailbox, { 'name' : line[ s+1 : -2 ] } )
+    if a:mode == 1
+      let stat = s:request('? STATUS "' . s:gmail_mailbox[idx-1].name . '" (UNSEEN)', g:gmail_timeout)
+      if len(stat) > 1
+        let stats = split(stat[0], ' ')
+        let unseen = '(' . stats[4]
+      else
+        let unseen = ''
       endif
-      call add(s:gmail_maibox_line, gmail#util#decodeUtf7(s:gmail_mailbox[idx-1].name . unseen))
-      call gmail#win#setline(idx, s:gmail_maibox_line[idx-1])
-      redraw
-      let idx += 1
-    endfor
-  else
-    call gmail#win#setline(1, s:gmail_maibox_line)
-  endif
+    else 
+      let unseen = '(-)'
+    endif
+    call add(s:gmail_maibox_line, gmail#util#decodeUtf7(s:gmail_mailbox[idx-1].name . unseen))
+    redraw
+    let idx += 1
+  endfor
+  return s:gmail_maibox_line
+endfunction
+
+function! gmail#imap#mailbox_index()
+  return s:gmail_mailbox_idx
+endfunction
+
+function! gmail#imap#mailbox_line(mb)
+  return s:gmail_maibox_line[a:mb]
 endfunction
 
 function! gmail#imap#select(mb)
   call s:request("? SELECT " . s:gmail_mailbox[a:mb].name, g:gmail_timeout)
   let s:gmail_mailbox_idx = a:mb
-  call gmail#win#hilightLine('gmailSelect', a:mb+1)
 
   let res = s:request("? SEARCH UNSEEN", g:gmail_timeout_for_unseen)
   if len(res) == 0
     call gmail#util#message('imap search unseen error(' . a:mb . ')')
     return
   endif
+
   let uitems = split(res[0], ' ')
   let s:gmail_unseens = uitems[ 2 : -1 ]
-  let unseen = '(' . len(s:gmail_unseens) . ')'
-  let s:gmail_maibox_line[a:mb] = gmail#util#decodeUtf7(s:gmail_mailbox[a:mb].name . unseen)
-
-  call gmail#win#setline(a:mb+1, s:gmail_maibox_line[a:mb])
-  redraw
+  let s:gmail_maibox_line[a:mb] = gmail#util#decodeUtf7(s:gmail_mailbox[a:mb].name . '(' . len(s:gmail_unseens) . ')')
 endfunction
 
-"
-" list
-"
-function! s:clear_list()
-  if exists('s:gmail_list')
-    unlet s:gmail_list
-  endif
-  if exists('s:gmail_uids')
-    unlet s:gmail_uids
-  endif
-  let s:gmail_page = -1
-endfunction
-
-function! gmail#imap#next_list()
-  call gmail#imap#update_list(s:gmail_page+1, 0)
-endfunction
-
-function! gmail#imap#update_list(page, clear)
-  if a:clear
-    call s:clear_list()
-    call s:force_select()
-  endif
-
-  call gmail#win#open(g:GMAIL_MODE_LIST)
-  call clearmatches()
-
-  if !exists('s:gmail_page')
-    let s:gmail_page = -1
-  endif
-
-  if !exists('s:gmail_list') || s:gmail_page != a:page
-
-    if !exists('s:gmail_uids')
-      let res = s:request("? SEARCH " . g:gmail_search_key, g:gmail_timeout)
-      if empty(res)
-        call gmail#util#message('imap search error.')
-        return
-      endif
-      let items = split(res[0], ' ')
-      let s:gmail_uids = items[ 2 : -1 ]
-    endif
-    if !exists('s:gmail_uids') || len(s:gmail_uids) <= 0
-      call gmail#win#clear()
-      return
-    endif
-
-    let last = len(s:gmail_uids)
-    let is = last - g:gmail_page_size*a:page - g:gmail_page_size
-    let ie = last - g:gmail_page_size*a:page - 1
-    if is < 0
-      let is = 0
-    endif
-    if ie < 0
-      let ie = 0
-    endif
-    let fs = s:gmail_uids[is]
-    let fe = s:gmail_uids[ie]
-    if a:page == 0
-      let s:gmail_list = []
-      let ins_pos = 0
-    else
-      let s:gmail_list = s:gmail_list[ 0 : -2 ]
-      let ins_pos = len(s:gmail_list)
-    endif
-
-    call s:update_list_range(fs, fe, ins_pos)
-  endif
-
-  call gmail#win#clear()
-  call gmail#win#setline(1, s:gmail_list)
-  redraw
-
-  if a:page > 0
-    call cursor(line('$'), 0)
-  endif
-  let s:gmail_page = a:page
-
-endfunction
-
-function! s:update_list_range(fs, fe, pos)
+function! gmail#imap#fetch_header(fs, fe)
   let res = s:request("? FETCH " . a:fs . ":" . a:fe . " rfc822.header", g:gmail_timeout)
+  let list = []
   if empty(res)
     call gmail#util#message('imap fetch error.')
-    return
+    return list
   endif
 
-  let date = ''
-  let subject = ''
-  let from = ''
-  let to = ''
-  let mark = ''
-  let number = ''
+  let [ date, subject, from, to, mark, number ] = [ '', '', '', '', '', '' ]
   for r in res
     let parts = split(r, ' ')
     if stridx(r, '*') == 0
@@ -221,7 +126,7 @@ function! s:update_list_range(fs, fe, pos)
       endif
       let number = parts[1]
     elseif r == ")"
-      call insert(s:gmail_list, join( [ mark, number, date, subject, '(From)' . from, '(To)' . to], ' '), a:pos)
+      call insert(list, join( [ mark, number, date, subject, '(From)' . from, '(To)' . to], ' '), 0)
     else
       let header = substitute(r, ':\s*', ':', '')
       let lidx = stridx(header, ':')
@@ -242,47 +147,10 @@ function! s:update_list_range(fs, fe, pos)
     endif
   endfor
 
-  call add(s:gmail_list, s:gmail_list_menu . ' search:' . g:gmail_search_key)
+  return list
 endfunction
 
-function! s:force_select()
-  call gmail#win#open(g:GMAIL_MODE_MAILBOX)
-  call gmail#imap#select(s:gmail_mailbox_idx)
-endfunction
-
-function! gmail#imap#newly_list()
-  call s:force_select()
-  call gmail#win#open(g:GMAIL_MODE_LIST)
-  let res = s:request("? SEARCH " . g:gmail_search_key, g:gmail_timeout)
-  if empty(res)
-    call gmail#util#message('imap search error.')
-    return
-  endif
-  let items = split(res[0], ' ')
-  let newly_uids = items[ 2 : -1 ]
-
-  call gmail#win#open(g:GMAIL_MODE_LIST)
-  if len(newly_uids) > len(s:gmail_uids)
-    let new_message_num = len(newly_uids) - len(s:gmail_uids)
-    let fs = newly_uids[-new_message_num]
-    let fe = newly_uids[-1]
-    let s:gmail_uids = newly_uids
-    call s:update_list_range(fs, fe, 0)
-    call gmail#win#clear()
-    call gmail#win#setline(1, s:gmail_list)
-    redraw
-  else
-    call gmail#util#message('new message is nothing.')
-  endif
-endfunction
-
-
-"
-" body
-"
-function! gmail#imap#body(id)
-  call gmail#win#open(g:GMAIL_MODE_BODY)
-  call gmail#win#clear()
+function! gmail#imap#fetch_body(id)
   let res = s:request("? FETCH " . a:id . " RFC822", g:gmail_timeout)
   let list = []
   let [ _HEADER, _HEADER_MULTI_MIME_HEADER, _HEADER_MULTI_MIME_BODY, _BODY ] = range(4)
@@ -290,8 +158,7 @@ function! gmail#imap#body(id)
   let enc = g:gmail_default_encoding
   let b64txt = ''
   let output_now = 0
-  let s:gmail_headers = {}
-  let s:gmail_headers.Cc = []
+  let s:gmail_headers = {'Cc':[]}
   for r in res[1:-4]
     "call add(list, r) "debug
     if status == _HEADER
@@ -352,9 +219,18 @@ function! gmail#imap#body(id)
       endif
     endif
   endfor
-  call gmail#win#setline(1, s:gmail_body_menu)
-  call gmail#win#setline(2, list)
   let g:gmail_encoding = enc
+  return list
+endfunction
+
+function! gmail#imap#search_uids(key)
+  let res = s:request("? SEARCH " . a:key, g:gmail_timeout)
+  if empty(res)
+    call gmail#util#message('imap search error.')
+    return []
+  endif
+  let items = split(res[0], ' ')
+  return items[ 2 : -1 ]
 endfunction
 
 function! gmail#imap#get_header()
@@ -377,10 +253,6 @@ function! s:parse_content_type(line)
   let enc = a:line[ st : ed-1 ]
   return enc
 endfunction
-
-"
-" imap request
-"
 
 function! gmail#imap#store_draft(id, sign)
   call s:request_store(a:id, '\Draft', a:sign)

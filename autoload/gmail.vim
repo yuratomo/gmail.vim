@@ -29,7 +29,7 @@ function! gmail#start()
     call gmail#util#message("gmail.vim is depend on vimproc. Please install it.")
     return
   endif
-  if !executable('openssl')
+  if !executable(g:gmail_command)
     call gmail#util#message("gmail.vim is depend on openssl. Please install it.")
     return
   endif
@@ -38,7 +38,7 @@ function! gmail#start()
     return
   endif
 
-  call gmail#imap#update_mailbox(0, 0)
+  call gmail#win#update_mailbox(0)
   if g:gmail_default_mailbox != ''
     let mbidx = -1
     let idx = 0
@@ -50,59 +50,63 @@ function! gmail#start()
       let idx += 1
     endfor
     if mbidx != -1
-      call gmail#imap#select(mbidx)
-      call gmail#imap#update_list(0, 1)
+      call gmail#win#select_mailbox(mbidx)
+      call gmail#win#update_list(0, 1)
     endif
   endif
-endfunction
-
-function! s:get_selections()
-  let ids = []
-  for line in getline(1, line('$'))
-    if line[0] == '>'
-      let item = split(line[2:], ' ')
-      call add(ids, item[0])
-    endif
-  endfor
-  return ids
 endfunction
 
 function! gmail#open()
   let l = line('.')
   if gmail#win#mode() == g:GMAIL_MODE_MAILBOX
-    call gmail#imap#select(l-1)
-    call gmail#imap#update_list(0, 1)
+    call gmail#win#select_mailbox(l-1)
+    call gmail#win#update_list(0, 1)
   elseif gmail#win#mode() == g:GMAIL_MODE_LIST
-    if l == line('$')
+    if l == 1
       let menu = expand('<cword>')
-      if menu == 'next'
-        call gmail#imap#next_list()
+      if menu == 'more'
+        call gmail#win#more_list()
       elseif menu == 'update'
-        call gmail#imap#newly_list()
+        call gmail#win#newly_list()
       elseif menu == 'unread'
-        for id in s:get_selections()
-          call gmail#imap#store_unseen(id, 1)
-          call gmail#imap#store_seen(id, 0)
-        endfor
-        call gmail#imap#update_list(0, 1)
+        let ids = gmail#win#get_selections()
+        if empty(ids)
+          call gmail#util#message('Please select item by space key.')
+        else
+          for id in ids
+            call gmail#imap#store_unseen(id, 1)
+            call gmail#imap#store_seen(id, 0)
+          endfor
+          call gmail#win#update_list(0, 1)
+        endif
       elseif menu == 'readed'
-        for id in s:get_selections()
-          call gmail#imap#store_unseen(id, 0)
-          call gmail#imap#store_seen(id, 1)
-        endfor
-        call gmail#imap#update_list(0, 1)
+        let ids = gmail#win#get_selections()
+        if empty(ids)
+          call gmail#util#message('Please select item by space key.')
+        else
+          for id in ids
+            call gmail#imap#store_unseen(id, 0)
+            call gmail#imap#store_seen(id, 1)
+          endfor
+          call gmail#win#update_list(0, 1)
+        endif
       elseif menu == 'delete'
-        for id in s:get_selections()
-          call gmail#imap#store_deleted(id, 1)
-        endfor
-        call gmail#imap#update_list(0, 1)
+        let ids = gmail#win#get_selections()
+        if empty(ids)
+          call gmail#util#message('Please select item by space key.')
+        else
+          for id in ids
+            call gmail#imap#store_deleted(id, 1)
+          endfor
+          call gmail#win#update_list(0, 1)
+        endif
       endif
     else
       call gmail#win#hilightLine('gmailSelect', l)
       let cline = getline('.')
       let line = split(cline[2:], ' ')
       call gmail#win#setline(line('.'), '  ' . cline[2:])
-      call gmail#imap#body(line[0])
+      call gmail#win#show_body(line[0])
     endif
   elseif gmail#win#mode() == g:GMAIL_MODE_BODY
     if l == 1
@@ -129,70 +133,16 @@ endfunction
 
 function! gmail#update()
   if gmail#win#mode() == g:GMAIL_MODE_MAILBOX
-    call gmail#imap#update_mailbox(1, 1)
+    call gmail#win#update_mailbox(1)
   elseif gmail#win#mode() == g:GMAIL_MODE_LIST
-    call gmail#imap#update_list(0, 1)
+    call gmail#win#update_list(0, 1)
   endif
 endfunction
 
 function! gmail#search()
   if gmail#win#mode() == g:GMAIL_MODE_LIST
     let g:gmail_search_key = input('search key:', g:gmail_search_key)
-    call gmail#imap#update_list(0, 1)
-  endif
-endfunction
-
-function! gmail#back()
-  if gmail#win#mode() == g:GMAIL_MODE_CREATE
-    call gmail#win#open(g:GMAIL_MODE_BODY)
-  endif
-endfunction
-
-function! gmail#select(line, direct, mark)
-  if gmail#win#mode() == g:GMAIL_MODE_LIST
-    let l = getline(a:line)
-    if len(l) > 0
-      if a:mark == ''
-        if l[0] == '>'
-          let l = ' ' . l[1:]
-        else
-          let l = '>' . l[1:]
-        endif
-      else
-        let l = a:mark . l[1:]
-      endif
-      call gmail#win#setline(a:line, l)
-      call cursor(line(a:line)+a:direct, 0)
-    endif
-  endif
-endfunction
-
-function! gmail#select_all()
-  let line = getline('.')
-  if line[0] == '>'
-    let mark = ' '
-  else
-    let mark = '>'
-  endif
-
-  for l in range(1, line('$')-1)
-    call gmail#select(l, 0, mark)
-  endfor
-endfunction
-
-function! gmail#tab(direct)
-  if gmail#win#mode() == g:GMAIL_MODE_LIST
-    call cursor('$', 0)
-  elseif gmail#win#mode() == g:GMAIL_MODE_BODY
-    call cursor(1, 0)
-  else
-    return
-  endif
-
-  if a:direct == 1
-    call feedkeys('f[', 'n')
-  else
-    call feedkeys('F[', 'n')
+    call gmail#win#update_list(0, 1)
   endif
 endfunction
 
