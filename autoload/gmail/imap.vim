@@ -32,11 +32,13 @@ endfunction
 
 function! s:relogin()
   call gmail#imap#exit()
+  let s:gmail_login_now = 1
   if gmail#imap#login() == 0
     call gmail#util#message('imap login error.')
     return 0
   endif
   call gmail#imap#select(s:gmail_mailbox_idx)
+  let s:gmail_login_now = 0
   return 1
 endfunction
 
@@ -93,7 +95,14 @@ function! gmail#imap#mailbox_line(mb)
 endfunction
 
 function! gmail#imap#select(mb)
-  call s:request("? SELECT " . s:gmail_mailbox[a:mb].name, g:gmail_timeout)
+  let res =  s:request("? SELECT " . s:gmail_mailbox[a:mb].name, g:gmail_timeout)
+  for r in res
+    if r =~ "\d* EXISTS"
+      let parts = split(r, ' ')
+      let s:gmail_uids = range(1, parts[1])
+      break
+    endif
+  endfor
   let s:gmail_mailbox_idx = a:mb
 
   let res = s:request("? SEARCH UNSEEN", g:gmail_timeout_for_unseen)
@@ -224,13 +233,17 @@ function! gmail#imap#fetch_body(id)
 endfunction
 
 function! gmail#imap#search_uids(key)
-  let res = s:request("? SEARCH " . a:key, g:gmail_timeout)
-  if empty(res)
-    call gmail#util#message('imap search error.')
-    return []
+  if exists('s:gmail_uids')
+    return s:gmail_uids
   endif
-  let items = split(res[0], ' ')
-  return items[ 2 : -1 ]
+  return []
+" let res = s:request("? SEARCH " . a:key, g:gmail_timeout)
+" if empty(res)
+"   call gmail#util#message('imap search error.')
+"   return []
+" endif
+" let items = split(res[0], ' ')
+" return items[ 2 : -1 ]
 endfunction
 
 function! gmail#imap#get_header()
@@ -304,36 +317,22 @@ function! s:request(cmd, timeout)
   try
     call s:sub.stdin.write(cmd)
   catch /.*/
-    if s:gmail_login_now == 0
-      if s:relogin() == 0
-        return []
-      endif
-      call s:sub.stdin.write(cmd)
+    if s:relogin() == 0
+      return []
     endif
+    call s:sub.stdin.write(cmd)
   endtry
 
   let ret = gmail#util#response(s:sub, '^? ', a:timeout)
   if empty(ret)
     if s:gmail_login_now == 0
-      let s:gmail_login_now = 1
       if s:relogin() == 0
         return []
       endif
       let ret = s:request(a:cmd, a:timeout)
-      let s:gmail_login_now = 0
       return ret
     endif
   endif
   return ret
-endfunction
-
-" debug
-function! gmail#imap#debug(cmd)
-  let res = s:request(a:cmd, g:gmail_timeout)
-  if empty(res)
-    call gmail#util#message('error.')
-    return
-  endif
-  echoerr join(res, "\n")
 endfunction
 

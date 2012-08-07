@@ -273,10 +273,10 @@ function! gmail#win#update_list(page, clear)
     if !exists('s:gmail_uids')
       let s:gmail_uids = gmail#imap#search_uids(g:gmail_search_key)
     endif
-    if empty(s:gmail_uids)
-      call gmail#win#clear()
-      return
-    endif
+"   if empty(s:gmail_uids)
+"     call gmail#win#clear()
+"     return
+"   endif
 
     let last = len(s:gmail_uids)
     let is = last - g:gmail_page_size*a:page - g:gmail_page_size
@@ -287,8 +287,10 @@ function! gmail#win#update_list(page, clear)
     if ie < 0
       let ie = 0
     endif
-    let fs = s:gmail_uids[is]
-    let fe = s:gmail_uids[ie]
+"   let fs = s:gmail_uids[is]
+"   let fe = s:gmail_uids[ie]
+    let fs = is
+    let fe = ie
     if a:page == 0
       let s:gmail_list = []
       call insert(s:gmail_list, s:gmail_list_menu . ' search:' . g:gmail_search_key, 0)
