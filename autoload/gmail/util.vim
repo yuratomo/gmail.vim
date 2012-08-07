@@ -146,6 +146,10 @@ function! gmail#util#str2bytes(str)
   return map(range(len(a:str)), 'char2nr(a:str[v:val])')
 endfunction
 
+function! gmail#util#decodeQuotedPrintable(data)
+  return substitute(a:data, '=\(\x\x\|\n\)', '\=submatch(1)=="\n"?"":nr2char("0x".submatch(1))', 'g')
+endfunction
+
 function! gmail#util#neglect_htmltag()
   setl modifiable
   :%s/<.\{-\}>//ge

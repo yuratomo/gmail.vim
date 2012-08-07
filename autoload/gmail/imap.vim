@@ -2,6 +2,7 @@ let s:gmail_mailbox_idx = 0
 let s:gmail_body_separator = ''
 let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
 let s:gmail_headers = {'Cc':[]}
+let [ s:CTE_7BIT, s:CTE_BASE64, s:CTE_PRINTABLE ] = range(3)
 
 function! gmail#imap#login()
   if !exists('g:gmail_user_name')
@@ -165,11 +166,12 @@ function! gmail#imap#fetch_body(id)
   let [ _HEADER, _HEADER_MULTI_MIME_HEADER, _HEADER_MULTI_MIME_BODY, _BODY ] = range(4)
   let status = _HEADER
   let enc = g:gmail_default_encoding
+  let cte = s:CTE_7BIT
   let b64txt = ''
   let output_now = 0
   let s:gmail_headers = {'Cc':[]}
   for r in res[1:-4]
-    "call add(list, r) "debug
+    "echoerr r
     if status == _HEADER
       if r == ''
         call add(list, s:gmail_body_separator)
@@ -218,10 +220,18 @@ function! gmail#imap#fetch_body(id)
         let enc = s:parse_content_type(r)
       elseif r == ''
         let status = _HEADER_MULTI_MIME_BODY
+      elseif r =~ '^Content-Transfer-Encoding:'
+        let cte = s:parse_content_transfer_encoding(r)
       endif
     elseif status == _HEADER_MULTI_MIME_BODY
       if r =~ '^--'
-        call extend(list, split(iconv(gmail#util#decodeBase64(b64txt), enc, &enc), nr2char(10)))
+        if cte == s:CTE_7BIT
+          call extend(list, split(iconv(b64txt, enc, &enc), nr2char(10)))
+        elseif cte == s:CTE_BASE64
+          call extend(list, split(iconv(gmail#util#decodeBase64(b64txt), enc, &enc), nr2char(10)))
+        elseif cte == s:CTE_PRINTABLE
+          call extend(list, split(iconv(gmail#util#decodeQuotedPrintable(b64txt), enc, &enc), nr2char(10)))
+        endif
         let status = _BODY
       else
         let b64txt .= r . "\n"
@@ -266,6 +276,18 @@ function! s:parse_content_type(line)
   let enc = a:line[ st : ed-1 ]
   return enc
 endfunction
+
+function! s:parse_content_transfer_encoding(line)
+  if a:line =~ '.*7bit'
+    return s:CTE_7BIT
+  elseif a:line =~ '.*base64'
+    return s:CTE_BASE64
+  elseif a:line =~ '.*quoted-printable'
+    return s:CTE_PRINTABLE
+  endif
+  return s:CTE_7BIT
+endfunction
+
 
 function! gmail#imap#store_draft(id, sign)
   call s:request_store(a:id, '\Draft', a:sign)
