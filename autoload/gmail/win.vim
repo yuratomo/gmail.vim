@@ -50,16 +50,18 @@ function! gmail#win#open(mode)
     exe 'au VimLeavePre * call gmail#imap#exit()'
   augroup END
 
-  nnoremap <buffer> <CR>  :call gmail#open()<CR>
-  nnoremap <buffer> <BS>  :call gmail#win#back()<CR>
-  nnoremap <buffer> u     :call gmail#update()<CR>
-  nnoremap <buffer> s     :call gmail#search()<CR>
-  nnoremap <buffer> c     :call gmail#smtp#open('',[],'')<CR>
-  nnoremap <buffer> <TAB>     :call gmail#win#tab(1)<CR>
-  nnoremap <buffer> <s-TAB>   :call gmail#win#tab(-1)<CR>
-  nnoremap <buffer> <space>   :call gmail#win#select('.',  1, '')<CR>
-  nnoremap <buffer> <s-space> :call gmail#win#select('.', -1, '')<CR>
-  nnoremap <buffer> a         :call gmail#win#select_all()<CR>
+  nnoremap <buffer> <CR>    :call gmail#open()<CR>
+  nnoremap <buffer> <BS>    :call gmail#win#back()<CR>
+  nnoremap <buffer> <TAB>   :call gmail#win#tab(1)<CR>
+  nnoremap <buffer> <s-TAB> :call gmail#win#tab(-1)<CR>
+  if a:mode == g:GMAIL_MODE_MAILBOX || a:mode == g:GMAIL_MODE_LIST
+    nnoremap <buffer> u   :call gmail#update()<CR>
+    nnoremap <buffer> s   :call gmail#search()<CR>
+    nnoremap <buffer> c   :call gmail#smtp#open('',[],'')<CR>
+    nnoremap <buffer> a   :call gmail#win#select_all()<CR>
+    nnoremap <buffer> <space>   :call gmail#win#select('.',  1, '')<CR>
+    nnoremap <buffer> <s-space> :call gmail#win#select('.', -1, '')<CR>
+  endif
 endfunction
 
 function! gmail#win#setline(idx, txt)

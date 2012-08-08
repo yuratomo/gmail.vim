@@ -212,6 +212,7 @@ function! gmail#imap#fetch_body(id)
       if r =~ '^--'
         let b64txt = ''
         let status = _HEADER_MULTI_MIME_HEADER
+        let multipart_mark = r
       else
         call add(list, iconv(r, enc, &enc))
       endif
@@ -232,9 +233,18 @@ function! gmail#imap#fetch_body(id)
         elseif cte == s:CTE_PRINTABLE
           call extend(list, split(iconv(gmail#util#decodeQuotedPrintable(b64txt), enc, &enc), nr2char(10)))
         endif
-        let status = _BODY
+        if r == multipart_mark
+          let status = _BODY
+        else
+          let status = _HEADER_MULTI_MIME_HEADER
+        let b64txt = ''
+        endif
       else
-        let b64txt .= r . "\n"
+        if cte == s:CTE_BASE64
+          let b64txt .= r
+        else
+          let b64txt .= r . "\n"
+        endif
       endif
     endif
   endfor
@@ -287,7 +297,6 @@ function! s:parse_content_transfer_encoding(line)
   endif
   return s:CTE_7BIT
 endfunction
-
 
 function! gmail#imap#store_draft(id, sign)
   call s:request_store(a:id, '\Draft', a:sign)

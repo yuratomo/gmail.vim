@@ -14,7 +14,7 @@
 " - リファクタリング
 "
 let g:gmail_timeout_for_unseen = 5000
-let g:gmail_timeout_for_body   = 4000
+let g:gmail_timeout_for_body   = 5000
 let g:gmail_timeout = 2000
 let g:gmail_search_key = 'ALL'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
