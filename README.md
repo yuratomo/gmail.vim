@@ -12,10 +12,12 @@ Requirements
 必要なのものは次のとおり。
 
 * vimproc
+
     git://github.com/Shougo/vimproc.git
 
 * openssl
 Windowsのmsysgitに含まれるopensslで動作が確認できています。
+
     http://code.google.com/p/msysgit/
 
 
@@ -34,14 +36,18 @@ Setting
 
 * 必要なら次のような設定をvimrcに記載する。（必須ではない)
 
-    "サーバーの設定（デフォルトは以下のとおり)
-    "let g:gmail_imap = 'imap.gmail.com:993'
-    "let g:gmail_smtp = 'smtp.gmail.com:465'
+  - サーバーの設定（デフォルトは以下のとおり)
 
-    "ユーザー名の指定
+    let g:gmail_imap = 'imap.gmail.com:993'
+
+    let g:gmail_smtp = 'smtp.gmail.com:465'
+
+  - ユーザー名の指定
+
     let g:gmail_user_name = 'xxx@gmail.com'
 
-    "メール送信時の署名
+  - メール送信時の署名
+
     let g:gmail_signature = '# ' . g:gmail_user_name . '(by gmail.vim)'
 
 
@@ -49,11 +55,13 @@ Usage
 -----
 
 * 起動
+
 次のコマンドをたたくだけです。
 
     :Gmail
 
 * 操作
+
 先頭行に表示されているものがメニューです。行いたい操作上でEnterキーを押してください。
 
 
