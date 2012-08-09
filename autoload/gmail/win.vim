@@ -106,9 +106,13 @@ function! gmail#win#select(line, direct, mark)
   if gmail#win#mode() != g:GMAIL_MODE_LIST
     return
   endif
-  let line = line(a:line)
-  if line == 1
-    return
+  if type(a:line) == type("")
+    let line = line(a:line)
+    if line == 1
+      return
+    endif
+  else
+    let line = a:line
   endif
 
   let l = getline(line)
