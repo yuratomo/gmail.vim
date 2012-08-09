@@ -2,6 +2,7 @@ let s:gmail_title_prefix = 'gmail-'
 let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new' ]
 let s:gmail_list_menu = '   [more] [update] [unread] [readed] [delete]'
 let s:gmail_body_menu = '[reply] [reply_all] [forward] [easy_html_view]'
+let s:gmail_mailbox_item_count = 0
 
 function! gmail#win#open(mode)
   let pref = s:gmail_winname[a:mode]
@@ -204,7 +205,7 @@ function! gmail#win#update_mailbox(mode)
 endfunction
 
 function! gmail#win#select_mailbox(mb)
-  call gmail#imap#select(a:mb)
+  let s:gmail_mailbox_item_count = gmail#imap#select(a:mb)
   call gmail#win#hilightLine('gmailSelect', a:mb+1)
   call gmail#win#setline(a:mb+1, gmail#imap#mailbox_line(a:mb))
   redraw
@@ -216,11 +217,12 @@ function! gmail#win#show_body(id)
   let list = gmail#imap#fetch_body(a:id)
   call gmail#win#setline(1, s:gmail_body_menu)
   call gmail#win#setline(2, list)
+  call gmail#util#message('show message ok.')
 endfunction
 
 function! gmail#win#reselect()
   call gmail#win#open(g:GMAIL_MODE_MAILBOX)
-  call gmail#imap#select(gmail#imap#mailbox_index())
+  let s:gmail_mailbox_item_count = gmail#imap#select(gmail#imap#mailbox_index())
 endfunction
 
 function! gmail#win#newly_list()
@@ -273,12 +275,16 @@ function! gmail#win#update_list(page, clear)
 
   if !exists('s:gmail_list') || s:gmail_page != a:page
     if !exists('s:gmail_uids')
-      let s:gmail_uids = gmail#imap#search_uids(g:gmail_search_key)
+      if a:clear
+        let s:gmail_uids = gmail#imap#search_uids(g:gmail_search_key)
+      else
+        let s:gmail_uids = range(1, s:gmail_mailbox_item_count)
+      endif
     endif
-"   if empty(s:gmail_uids)
-"     call gmail#win#clear()
-"     return
-"   endif
+    if empty(s:gmail_uids)
+      call gmail#win#clear()
+      return
+    endif
 
     let last = len(s:gmail_uids)
     let is = last - g:gmail_page_size*a:page - g:gmail_page_size
@@ -289,10 +295,8 @@ function! gmail#win#update_list(page, clear)
     if ie < 0
       let ie = 0
     endif
-"   let fs = s:gmail_uids[is]
-"   let fe = s:gmail_uids[ie]
-    let fs = is
-    let fe = ie
+    let fs = s:gmail_uids[is]
+    let fe = s:gmail_uids[ie]
     if a:page == 0
       let s:gmail_list = []
       call insert(s:gmail_list, s:gmail_list_menu . ' search:' . g:gmail_search_key, 0)

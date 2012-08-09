@@ -9,9 +9,20 @@
 " - http://d.hatena.ne.jp/hogem/20100122/1264169093
 " - http://www.hidekik.com/cookbook/p2h.cgi?id=smtptext
 "
+" [ファイルの関連]
+"
+" - plugin/gmail.vim
+"   - autoload/gmail.vim
+"     - autoload/gmail/win.vim
+"       - autoload/gmail/imap.vim
+"       - autoload/gmail/smtp.vim
+"         - autoload/gmail/util.vim
+" - syntax/gmail.vim
+"
 " [TODO]
 " - 添付ファイルは？？？
 " - リファクタリング
+"
 "
 let g:gmail_timeout_for_unseen = 5000
 let g:gmail_timeout_for_body   = 5000

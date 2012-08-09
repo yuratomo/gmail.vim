@@ -96,11 +96,13 @@ function! gmail#imap#mailbox_line(mb)
 endfunction
 
 function! gmail#imap#select(mb)
+  let item_count = 0
   let res =  s:request("? SELECT " . s:gmail_mailbox[a:mb].name, g:gmail_timeout)
   for r in res
     if r =~ "\d* EXISTS"
       let parts = split(r, ' ')
-      let s:gmail_uids = range(1, parts[1])
+      let item_count = parts[1]
+      let s:gmail_uids = range(1, item_count)
       break
     endif
   endfor
@@ -115,6 +117,7 @@ function! gmail#imap#select(mb)
   let uitems = split(res[0], ' ')
   let s:gmail_unseens = uitems[ 2 : -1 ]
   let s:gmail_maibox_line[a:mb] = gmail#util#decodeUtf7(s:gmail_mailbox[a:mb].name . '(' . len(s:gmail_unseens) . ')')
+  return item_count
 endfunction
 
 function! gmail#imap#fetch_header(fs, fe)
@@ -179,13 +182,15 @@ function! gmail#imap#fetch_body(id)
       elseif r =~ '^Content-type:\s\?'
         let enc = s:parse_content_type(r)
         call gmail#util#message('encoding is ' . enc)
+      elseif r =~ '^Content-Transfer-Encoding:'
+        let cte = s:parse_content_transfer_encoding(r)
       else
         let coron = stridx(r, ':')
         let key = r[ 0 : coron-1 ]
         if index(s:gmail_allow_headers, key) != -1 || ( coron == -1 && output_now == 1 )
           if r =~ '=?.*?='
             let st = stridx(r, '=?')
-            let encoded_value = r[0:st-1] . gmail#util#decodeMime(r[st+1:])
+            let encoded_value = r[0 : st-1] . gmail#util#decodeMime(r[st : ])
           else
             let encoded_value = r
           endif
@@ -214,7 +219,11 @@ function! gmail#imap#fetch_body(id)
         let status = _HEADER_MULTI_MIME_HEADER
         let multipart_mark = r
       else
-        call add(list, iconv(r, enc, &enc))
+        if cte == s:CTE_7BIT
+          call add(list, iconv(r, enc, &enc))
+        else
+          let b64txt .= r
+        endif
       endif
     elseif status == _HEADER_MULTI_MIME_HEADER
       if r =~ '^Content-type:'
@@ -237,8 +246,8 @@ function! gmail#imap#fetch_body(id)
           let status = _BODY
         else
           let status = _HEADER_MULTI_MIME_HEADER
-        let b64txt = ''
         endif
+        let b64txt = ''
       else
         if cte == s:CTE_BASE64
           let b64txt .= r
@@ -248,22 +257,23 @@ function! gmail#imap#fetch_body(id)
       endif
     endif
   endfor
+
+  if b64txt != '' && cte == s:CTE_BASE64
+    call extend(list, split(iconv(gmail#util#decodeBase64(b64txt), enc, &enc), nr2char(10)))
+  endif
+
   let g:gmail_encoding = enc
   return list
 endfunction
 
 function! gmail#imap#search_uids(key)
-  if exists('s:gmail_uids')
-    return s:gmail_uids
+  let res = s:request("? SEARCH " . a:key, g:gmail_timeout)
+  if empty(res)
+    call gmail#util#message('imap search error.')
+    return []
   endif
-  return []
-" let res = s:request("? SEARCH " . a:key, g:gmail_timeout)
-" if empty(res)
-"   call gmail#util#message('imap search error.')
-"   return []
-" endif
-" let items = split(res[0], ' ')
-" return items[ 2 : -1 ]
+  let items = split(res[0], ' ')
+  return items[ 2 : -1 ]
 endfunction
 
 function! gmail#imap#get_header()

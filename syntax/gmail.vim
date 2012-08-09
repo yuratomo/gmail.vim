@@ -37,7 +37,7 @@ syn match   gmailBracket1   /Åu\_.\{-0,30}Åv/
 syn match   gmailBracket2   /Åw\_.\{-0,30}Åx/
 syn match   gmailBracket3   /Åy\_.\{-0,30}Åz/
 
-hi default link gmailButton     WildMenu
+hi default link gmailButton     Function
 hi default link gmailFrom       Statement
 hi default link gmailTo         Statement
 hi default link gmailLabel      StatusLine
