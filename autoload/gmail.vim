@@ -101,6 +101,10 @@ function! gmail#open()
         if empty(ids)
           call gmail#util#message('Please select item by space key.')
         else
+          if gmail#util#confirm('Delete selected files. Are you OK?[y/n]:') == 0
+            gmail#util#message('Cancel delete...')
+            return
+          endif
           for id in ids
             call gmail#imap#store_deleted(id, 1)
           endfor
@@ -132,6 +136,10 @@ function! gmail#open()
   elseif gmail#win#mode() == g:GMAIL_MODE_CREATE
     if l == 1
       if expand('<cword>') == 'send'
+        if gmail#util#confirm('Send e-mail. Are you OK?[y/n]:') == 0
+          gmail#util#message('Cancel send...')
+          return
+        endif
         call gmail#smtp#send()
       endif
     endif

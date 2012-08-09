@@ -23,26 +23,39 @@ Setting
 -------
 
 * imapの有効化
+
     gmailの設定でimapを有効にしてください。やり方はウェブ上で調べてください。
 
 * vimprocのインストール
 
 * opensslにパスを通す
+    
     let &path = $path . 'c:\Program files\git\bin'
 
 * 必要なら次のような設定をvimrcに記載する。（必須ではない)
+
     "サーバーの設定（デフォルトは以下のとおり)
     "let g:gmail_imap = 'imap.gmail.com:993'
     "let g:gmail_smtp = 'smtp.gmail.com:465'
-    
+
     "ユーザー名の指定
     let g:gmail_user_name = 'xxx@gmail.com'
+
+    "メール送信時の署名
+    let g:gmail_signature = '# ' . g:gmail_user_name . '(by gmail.vim)'
+
 
 Usage
 -----
 
 * 起動
+次のコマンドをたたくだけです。
+
     :Gmail
+
+* 操作
+先頭行に表示されているものがメニューです。行いたい操作上でEnterキーを押してください。
+
 
 ScreenShots
 -----------

@@ -13,8 +13,7 @@ function! gmail#imap#login()
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
   endif
   if !exists('g:gmail_user_pass')
-    let g:gmail_user_pass = input('input password:')
-    redraw
+    let g:gmail_user_pass = inputsecret('input password:')
   endif
 
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
@@ -28,8 +27,9 @@ function! gmail#imap#login()
   let s:gmail_login_now = 1
   let ret = s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass, g:gmail_timeout)
   let s:gmail_login_now = 0
-  if empty(ret)
+  if empty(ret) || ret[-1] !~ '? OK'
     call gmail#util#message('imap login error.')
+    unlet g:gmail_user_pass
     return 0
   endif
 

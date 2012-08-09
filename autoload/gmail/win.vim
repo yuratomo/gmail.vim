@@ -241,7 +241,7 @@ function! gmail#win#newly_list()
     let fe = newly_uids[-1]
     let s:gmail_uids = newly_uids
     let old_list = s:gmail_list
-    let s:gmail_list = gmail#imap#fetch_header(fs, fe))
+    let s:gmail_list = gmail#imap#fetch_header(fs, fe)
     call extend(s:gmail_list, old_list)
     call gmail#win#clear()
     call gmail#win#setline(1, s:gmail_list)

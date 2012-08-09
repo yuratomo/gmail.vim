@@ -7,6 +7,19 @@ function! gmail#util#message(msg)
   redraw
 endfunction
 
+function! gmail#util#confirm(msg)
+  while 1
+    let ans = input(a:msg)
+    if ans == ''
+      return 0
+    elseif ans == 'y'
+      return 1
+    elseif ans == 'n'
+      return 0
+    endif
+  endwhile
+endfunction
+
 function! gmail#util#response(vp, end, timeout)
   let cnt = 0
   let res = ''
