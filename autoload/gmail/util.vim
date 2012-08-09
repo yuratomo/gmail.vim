@@ -1,4 +1,6 @@
-"let g:gmail_encoding = ''
+" File: autoload/gmail/util.vim
+" Last Modified: 2012.08.10
+" Author: yuratomo (twitter @yusetomo)
 
 function! gmail#util#message(msg)
   echon 'gmail:' . a:msg
@@ -64,7 +66,6 @@ function! gmail#util#decodeMime(str)
   else
     let enc = a:str[ enc_s+2 : enc_e-1 ]
   endif
-  "let g:gmail_encoding = enc
   return iconv(gmail#util#decodeBase64(a:str[ start+1 : end-1 ]), enc, &enc)
 endfunction
 

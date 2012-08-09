@@ -1,3 +1,7 @@
+" File: autoload/gmail/imap.vim
+" Last Modified: 2012.08.10
+" Author: yuratomo (twitter @yusetomo)
+
 let s:gmail_mailbox_idx = 0
 let s:gmail_body_separator = ''
 let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
@@ -10,6 +14,7 @@ function! gmail#imap#login()
   endif
   if !exists('g:gmail_user_pass')
     let g:gmail_user_pass = input('input password:')
+    redraw
   endif
 
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']

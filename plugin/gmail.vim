@@ -1,7 +1,6 @@
 " File: plugin/gmail.vim
-" Last Modified: 2012.07.20
+" Last Modified: 2012.08.10
 " Author: yuratomo (twitter @yusetomo)
-"
 
 if !exists('g:gmail_command')
   let g:gmail_command = 'openssl'

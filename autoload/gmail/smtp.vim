@@ -1,3 +1,7 @@
+" File: autoload/gmail/smtp.vim
+" Last Modified: 2012.08.10
+" Author: yuratomo (twitter @yusetomo)
+
 let s:gmail_sendmail_normalize_target = [ 'To', 'Cc', 'Bcc' ]
 let s:gmail_sendmail_headers = [ 'To:', 'Cc:', 'Bcc:', 'Subject:' ]
 

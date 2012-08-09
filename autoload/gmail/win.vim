@@ -1,3 +1,7 @@
+" File: autoload/gmail/win.vim
+" Last Modified: 2012.08.10
+" Author: yuratomo (twitter @yusetomo)
+
 let s:gmail_title_prefix = 'gmail-'
 let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new' ]
 let s:gmail_list_menu = '   [more] [update] [unread] [readed] [delete]'

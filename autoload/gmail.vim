@@ -1,3 +1,7 @@
+" File: autoload/gmail.vim
+" Last Modified: 2012.08.10
+" Author: yuratomo (twitter @yusetomo)
+"
 " [参考]
 " - http://wiki.mediatemple.net/w/Email_via_IMAP_using_Telnet
 " - http://www.lins.jp/~obata/imap/rfc/rfc2060ja.html#s6.4.4
@@ -9,19 +13,8 @@
 " - http://d.hatena.ne.jp/hogem/20100122/1264169093
 " - http://www.hidekik.com/cookbook/p2h.cgi?id=smtptext
 "
-" [ファイルの関連]
-"
-" - plugin/gmail.vim
-"   - autoload/gmail.vim
-"     - autoload/gmail/win.vim
-"       - autoload/gmail/imap.vim
-"       - autoload/gmail/smtp.vim
-"         - autoload/gmail/util.vim
-" - syntax/gmail.vim
-"
 " [TODO]
 " - 添付ファイルは？？？
-" - リファクタリング
 "
 "
 let g:gmail_timeout_for_unseen = 5000

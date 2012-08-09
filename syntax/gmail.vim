@@ -1,3 +1,7 @@
+" File: syntax/gmail.vim
+" Last Modified: 2012.08.10
+" Author: yuratomo (twitter @yusetomo)
+
 if version < 700
   syntax clear
 elseif exists("b:current_syntax")
