@@ -2,6 +2,10 @@
 " Last Modified: 2012.08.10
 " Author: yuratomo (twitter @yusetomo)
 
+if exists('g:loaded_gmail') && g:loaded_gmail == 1
+  finish
+endif
+
 if !exists('g:gmail_command')
   let g:gmail_command = 'openssl'
 endif
@@ -34,5 +38,11 @@ if !exists('g:gmail_signature')
   endif
 endif
 
-command! -nargs=0 Gmail :call gmail#start()
+if !exists('g:gmail_check_target_mail')
+  let g:gmail_check_target_mail = '‚·‚×‚Ä‚Ìƒ[ƒ‹'
+endif
 
+command! -nargs=0 Gmail :call gmail#start()
+command! -nargs=0 GmailCheckNewMail :call gmail#checkNewMail()
+
+let g:loaded_gmail = 1

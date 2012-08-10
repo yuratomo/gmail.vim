@@ -206,10 +206,23 @@ function! gmail#win#back()
   endif
 endfunction
 
-function! gmail#win#update_mailbox(mode)
+function! gmail#win#update_mailboxs(mode)
   call gmail#win#open(g:GMAIL_MODE_MAILBOX)
   call gmail#win#clear()
   call gmail#win#setline(1, gmail#imap#list(a:mode))
+endfunction
+
+function! gmail#win#update_cur_mailbox(mb)
+  let mailbox = gmail#imap#get_mailbox()
+  let unseen = gmail#imap#status_unseen(mailbox[a:mb-1].name)
+  if unseen > 0
+    let unseen = '(' . unseen . ')'
+  else
+    let unseen = ''
+  endif
+  let line = mailbox[a:mb-1].dname . unseen
+  call gmail#imap#set_mailbox_line(a:mb, line)
+  call gmail#win#setline(a:mb, line)
 endfunction
 
 function! gmail#win#select_mailbox(mb)
@@ -245,8 +258,9 @@ function! gmail#win#newly_list()
     let fe = newly_uids[-1]
     let s:gmail_uids = newly_uids
     let old_list = s:gmail_list
-    let s:gmail_list = gmail#imap#fetch_header(fs, fe)
-    call extend(s:gmail_list, old_list)
+    let s:gmail_list = old_list[0 : 0]
+    call extend(s:gmail_list, gmail#imap#fetch_header(fs, fe))
+    call extend(s:gmail_list, old_list[1 : ])
     call gmail#win#clear()
     call gmail#win#setline(1, s:gmail_list)
     redraw
@@ -322,3 +336,4 @@ function! gmail#win#update_list(page, clear)
   let s:gmail_page = a:page
 
 endfunction
+

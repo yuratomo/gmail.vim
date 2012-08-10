@@ -42,7 +42,7 @@ function! gmail#start()
     return
   endif
 
-  call gmail#win#update_mailbox(0)
+  call gmail#win#update_mailboxs(0)
   if g:gmail_default_mailbox != ''
     let mbidx = -1
     let idx = 0
@@ -58,6 +58,29 @@ function! gmail#start()
       call gmail#win#update_list(0, 1)
     endif
   endif
+endfunction
+
+function! gmail#checkNewMail()
+  call gmail#imap#list(0)
+  let target = ''
+  let idx = 0
+  for item in gmail#imap#get_mailbox()
+    if item.dname =~ g:gmail_check_target_mail
+      let target = item.name
+      break
+    endif
+    let idx += 1
+  endfor
+
+  let unseen = gmail#imap#status_unseen(target)
+  redraw
+  if unseen > 0
+    call gmail#util#message('You have ' . unseen . ' unseen mails!!' )
+  elseif unseen == 0
+    call gmail#util#message('There is no new mail.')
+  else
+    call gmail#util#message('Check new mail error.')
+  endi
 endfunction
 
 function! gmail#open()
@@ -148,7 +171,7 @@ endfunction
 
 function! gmail#update()
   if gmail#win#mode() == g:GMAIL_MODE_MAILBOX
-    call gmail#win#update_mailbox(1)
+    call gmail#win#update_cur_mailbox(line('.'))
   elseif gmail#win#mode() == g:GMAIL_MODE_LIST
     call gmail#win#update_list(0, 1)
   endif

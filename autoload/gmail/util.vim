@@ -3,7 +3,7 @@
 " Author: yuratomo (twitter @yusetomo)
 
 function! gmail#util#message(msg)
-  echon 'gmail:' . a:msg
+  echon 'Gmail: ' . a:msg
   redraw
 endfunction
 
@@ -49,11 +49,18 @@ function! gmail#util#response(vp, end, timeout)
   return split(res, "\r")
 endfunction
 
+function! gmail#util#encodeUtf7(str)
+  let mod1 = iconv(a:str, &enc, 'UTF-7')
+  let mod2 = substitute(mod1, '/', ',', 'g')
+  let mod3 = substitute(mod2, '&', '&-', 'g')
+  return     substitute(mod3, '+', '&', '')
+endfunction
+
 function! gmail#util#decodeUtf7(str)
   let mod1 = substitute(a:str, '&', '+', '')
   let mod2 = substitute(mod1, '&-', '&', 'g')
   let mod3 = substitute(mod2, ',', '/', 'g')
-  return iconv(mod3, 'UTF-7', &enc)
+  return     iconv(mod3, 'UTF-7', &enc)
 endfunction
 
 function! gmail#util#encodeMime(str)

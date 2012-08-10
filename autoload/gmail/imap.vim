@@ -6,6 +6,7 @@ let s:gmail_mailbox_idx = 0
 let s:gmail_body_separator = ''
 let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
 let s:gmail_headers = {'Cc':[]}
+let s:gmail_login_now = 0
 let [ s:CTE_7BIT, s:CTE_BASE64, s:CTE_PRINTABLE ] = range(3)
 
 function! gmail#imap#login()
@@ -43,7 +44,12 @@ function! s:relogin()
     call gmail#util#message('imap login error.')
     return 0
   endif
-  call gmail#imap#select(s:gmail_mailbox_idx)
+
+  if !exists('s:gmail_mailbox')
+    call gmail#imap#list(0)
+    call gmail#imap#select(s:gmail_mailbox_idx)
+  endif
+
   let s:gmail_login_now = 0
   return 1
 endfunction
@@ -63,7 +69,20 @@ function! gmail#imap#exit()
 endfunction
 
 function! gmail#imap#get_mailbox()
+  if !exists('s:gmail_mailbox')
+    return []
+  endif
   return s:gmail_mailbox
+endfunction
+
+function! gmail#imap#status_unseen(mailbox)
+  let stat = s:request('? STATUS "' .a:mailbox . '" (UNSEEN)', g:gmail_timeout)
+  echo join(stat, "\n")
+  if len(stat) > 1
+    let parts = split(stat[0], ' ')
+    return parts[4][0 : -2 ]
+  endif
+  return -1
 endfunction
 
 function! gmail#imap#list(mode)
@@ -73,19 +92,20 @@ function! gmail#imap#list(mode)
   let results = s:request('? LIST "" "*"', g:gmail_timeout)
   for line in results[ 0 : -2 ]
     let s = strridx(line, '"', len(line)-2)
-    call add(s:gmail_mailbox, { 'name' : line[ s+1 : -2 ] } )
+    let name = line[ s+1 : -2 ]
+    let dname = gmail#util#decodeUtf7(name)
+    call add(s:gmail_mailbox, { 'name' : name, 'dname' : dname } )
     if a:mode == 1
-      let stat = s:request('? STATUS "' . s:gmail_mailbox[idx-1].name . '" (UNSEEN)', g:gmail_timeout)
-      if len(stat) > 1
-        let stats = split(stat[0], ' ')
-        let unseen = '(' . stats[4]
+      let unseen = gmail#imap#status_unseen(s:gmail_mailbox[idx-1].name)
+      if ret > 0
+        let unseen = '(' . unseen . ')'
       else
         let unseen = ''
       endif
     else 
       let unseen = '(-)'
     endif
-    call add(s:gmail_maibox_line, gmail#util#decodeUtf7(s:gmail_mailbox[idx-1].name . unseen))
+    call add(s:gmail_maibox_line, dname . unseen)
     redraw
     let idx += 1
   endfor
@@ -98,6 +118,10 @@ endfunction
 
 function! gmail#imap#mailbox_line(mb)
   return s:gmail_maibox_line[a:mb]
+endfunction
+
+function! gmail#imap#set_mailbox_line(mb, line)
+  let s:gmail_maibox_line[a:mb] = a:line
 endfunction
 
 function! gmail#imap#select(mb)
