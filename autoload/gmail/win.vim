@@ -102,6 +102,13 @@ function! gmail#win#mode()
   return -1
 endfunction
 
+function! gmail#win#all_close()
+  exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_MAILBOX]
+  exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_LIST]
+  exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_BODY]
+  exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_CREATE]
+endfunction
+
 function! gmail#win#select(line, direct, mark)
   if gmail#win#mode() != g:GMAIL_MODE_LIST
     return
@@ -218,7 +225,7 @@ function! gmail#win#update_cur_mailbox(mb)
   if unseen > 0
     let unseen = '(' . unseen . ')'
   else
-    let unseen = ''
+    let unseen = '(0)'
   endif
   let line = mailbox[a:mb-1].dname . unseen
   call gmail#imap#set_mailbox_line(a:mb, line)
@@ -249,7 +256,7 @@ endfunction
 function! gmail#win#newly_list()
   call gmail#win#reselect()
   call gmail#win#open(g:GMAIL_MODE_LIST)
-  let newly_uids = gmail#imap#search_uids(g:gmail_search_key)
+  let newly_uids = gmail#imap#search(g:gmail_search_key)
 
   call gmail#win#open(g:GMAIL_MODE_LIST)
   if len(newly_uids) > len(s:gmail_uids)
@@ -298,7 +305,7 @@ function! gmail#win#update_list(page, clear)
   if !exists('s:gmail_list') || s:gmail_page != a:page
     if !exists('s:gmail_uids')
       if a:clear
-        let s:gmail_uids = gmail#imap#search_uids(g:gmail_search_key)
+        let s:gmail_uids = gmail#imap#search(g:gmail_search_key)
       else
         let s:gmail_uids = range(1, s:gmail_mailbox_item_count)
       endif

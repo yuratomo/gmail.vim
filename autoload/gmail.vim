@@ -2,24 +2,10 @@
 " Last Modified: 2012.08.10
 " Author: yuratomo (twitter @yusetomo)
 "
-" [参考]
-" - http://wiki.mediatemple.net/w/Email_via_IMAP_using_Telnet
-" - http://www.lins.jp/~obata/imap/rfc/rfc2060ja.html#s6.4.4
-" - http://www.atmarkit.co.jp/fmobile/rensai/imap04/imap04.html
-" - http://bobpeers.com/technical/telnet_imap
-" - http://b.ruyaka.com/2010/08/11/openssl-s_client%E3%81%A7gmail%E3%83%A1%E3%83%BC%E3%83%AB%E9%80%81%E4%BF%A1/
-" - http://d.hatena.ne.jp/yatt/20110728/1311868549
-" - http://code-life.net/?p=1679
-" - http://d.hatena.ne.jp/hogem/20100122/1264169093
-" - http://www.hidekik.com/cookbook/p2h.cgi?id=smtptext
-"
 " [TODO]
 " - 添付ファイルは？？？
 "
 "
-let g:gmail_timeout_for_unseen = 5000
-let g:gmail_timeout_for_body   = 5000
-let g:gmail_timeout = 2000
 let g:gmail_search_key = 'ALL'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
 
@@ -60,23 +46,29 @@ function! gmail#start()
   endif
 endfunction
 
+function! gmail#exit()
+  call gmail#win#all_close()
+endfunction
+
 function! gmail#checkNewMail()
   call gmail#imap#list(0)
   let target = ''
   let idx = 0
   for item in gmail#imap#get_mailbox()
     if item.dname =~ g:gmail_check_target_mail
+"   if item.dname =~ g:gmail_default_mailbox
       let target = item.name
       break
     endif
     let idx += 1
   endfor
 
-  let unseen = gmail#imap#status_unseen(target)
+" let cnt = gmail#imap#status_unseen(target)
+  let cnt = gmail#imap#status_recent(target)
   redraw
-  if unseen > 0
-    call gmail#util#message('You have ' . unseen . ' unseen mails!!' )
-  elseif unseen == 0
+  if cnt > 0
+    call gmail#util#message('You have ' . cnt . ' new mails!!' )
+  elseif cnt == 0
     call gmail#util#message('There is no new mail.')
   else
     call gmail#util#message('Check new mail error.')
@@ -100,10 +92,7 @@ function! gmail#open()
         if empty(ids)
           call gmail#util#message('Please select item by space key.')
         else
-          for id in ids
-            call gmail#imap#store_unseen(id, 1)
-            call gmail#imap#store_seen(id, 0)
-          endfor
+          call gmail#imap#store_seen(ids, 0)
           call gmail#win#reselect()
           call gmail#win#update_list(0, 1)
         endif
@@ -112,10 +101,7 @@ function! gmail#open()
         if empty(ids)
           call gmail#util#message('Please select item by space key.')
         else
-          for id in ids
-            call gmail#imap#store_unseen(id, 0)
-            call gmail#imap#store_seen(id, 1)
-          endfor
+          call gmail#imap#store_seen(ids, 1)
           call gmail#win#reselect()
           call gmail#win#update_list(0, 1)
         endif
@@ -125,12 +111,10 @@ function! gmail#open()
           call gmail#util#message('Please select item by space key.')
         else
           if gmail#util#confirm('Delete selected files. Are you OK?[y/n]:') == 0
-            gmail#util#message('Cancel delete...')
+            call gmail#util#message('Cancel delete...')
             return
           endif
-          for id in ids
-            call gmail#imap#store_deleted(id, 1)
-          endfor
+          call gmail#imap#store_deleted(ids, 1)
           call gmail#win#reselect()
           call gmail#win#update_list(0, 1)
         endif
@@ -160,7 +144,7 @@ function! gmail#open()
     if l == 1
       if expand('<cword>') == 'send'
         if gmail#util#confirm('Send e-mail. Are you OK?[y/n]:') == 0
-          gmail#util#message('Cancel send...')
+          call gmail#util#message('Cancel send...')
           return
         endif
         call gmail#smtp#send()

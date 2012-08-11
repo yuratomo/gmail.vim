@@ -120,7 +120,7 @@ function! s:sendmail(header, to, messages)
     try
       call sub.stdin.write(command)
     catch /.*/
-      call gmail#util#message('write error')
+      call gmail#util#error('write error')
       let err = 1
       break
     endtry
@@ -139,7 +139,7 @@ function! s:sendmail(header, to, messages)
     call gmail#util#message('send mail ok.')
     call gmail#win#open(g:GMAIL_MODE_BODY)
   else
-    call gmail#util#message('send mail error!!')
+    call gmail#util#error('send mail error!!')
   endif
 
 endfunction

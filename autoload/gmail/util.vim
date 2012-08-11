@@ -3,8 +3,12 @@
 " Author: yuratomo (twitter @yusetomo)
 
 function! gmail#util#message(msg)
-  echon 'Gmail: ' . a:msg
+  echo 'Gmail: ' . a:msg
   redraw
+endfunction
+
+function! gmail#util#error(msg)
+  echoerr 'Gmail: ' . a:msg
 endfunction
 
 function! gmail#util#confirm(msg)

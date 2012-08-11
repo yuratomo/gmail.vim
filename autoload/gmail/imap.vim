@@ -9,6 +9,7 @@ let s:gmail_headers = {'Cc':[]}
 let s:gmail_login_now = 0
 let [ s:CTE_7BIT, s:CTE_BASE64, s:CTE_PRINTABLE ] = range(3)
 
+" LOGIN/LOGOUT
 function! gmail#imap#login()
   if !exists('g:gmail_user_name')
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
@@ -16,20 +17,22 @@ function! gmail#imap#login()
   if !exists('g:gmail_user_pass')
     let g:gmail_user_pass = inputsecret('input password:')
   endif
+  call gmail#imap#exit()
 
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
   let s:sub = vimproc#popen3(cmd)
   let ret = gmail#util#response(s:sub, '^* OK', g:gmail_timeout_for_body)
   if empty(ret)
-    call gmail#util#message('imap connect error.')
+    call gmail#util#error('imap connect error.')
     return 0
   endif
 
   let s:gmail_login_now = 1
-  let ret = s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass, g:gmail_timeout)
+  let res = s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass, g:gmail_timeout)
   let s:gmail_login_now = 0
-  if empty(ret) || ret[-1] !~ '? OK'
-    call gmail#util#message('imap login error.')
+
+  if s:is_response_error(res)
+    call gmail#util#error('imap login error.')
     unlet g:gmail_user_pass
     return 0
   endif
@@ -38,10 +41,10 @@ function! gmail#imap#login()
 endfunction
 
 function! s:relogin()
-  call gmail#imap#exit()
   let s:gmail_login_now = 1
   if gmail#imap#login() == 0
-    call gmail#util#message('imap login error.')
+    call gmail#util#error('imap login error.')
+    let s:gmail_login_now = 0
     return 0
   endif
 
@@ -68,29 +71,20 @@ function! gmail#imap#exit()
   endif
 endfunction
 
-function! gmail#imap#get_mailbox()
-  if !exists('s:gmail_mailbox')
-    return []
-  endif
-  return s:gmail_mailbox
-endfunction
-
-function! gmail#imap#status_unseen(mailbox)
-  let stat = s:request('? STATUS "' .a:mailbox . '" (UNSEEN)', g:gmail_timeout)
-  echo join(stat, "\n")
-  if len(stat) > 1
-    let parts = split(stat[0], ' ')
-    return parts[4][0 : -2 ]
-  endif
-  return -1
-endfunction
+" LIST
 
 function! gmail#imap#list(mode)
   let idx = 1
   let s:gmail_mailbox = []
   let s:gmail_maibox_line = []
-  let results = s:request('? LIST "" "*"', g:gmail_timeout)
-  for line in results[ 0 : -2 ]
+
+  let res = s:request('? LIST "" "*"', g:gmail_timeout)
+  if s:is_response_error(res)
+    call gmail#util#error("imap list error.")
+    return
+  endif
+
+  for line in res[ 0 : -2 ]
     let s = strridx(line, '"', len(line)-2)
     let name = line[ s+1 : -2 ]
     let dname = gmail#util#decodeUtf7(name)
@@ -112,6 +106,13 @@ function! gmail#imap#list(mode)
   return s:gmail_maibox_line
 endfunction
 
+function! gmail#imap#get_mailbox()
+  if !exists('s:gmail_mailbox')
+    return []
+  endif
+  return s:gmail_mailbox
+endfunction
+
 function! gmail#imap#mailbox_index()
   return s:gmail_mailbox_idx
 endfunction
@@ -124,6 +125,8 @@ function! gmail#imap#set_mailbox_line(mb, line)
   let s:gmail_maibox_line[a:mb] = a:line
 endfunction
 
+" SELECT
+
 function! gmail#imap#select(mb)
   let item_count = 0
   let res =  s:request("? SELECT " . s:gmail_mailbox[a:mb].name, g:gmail_timeout)
@@ -131,29 +134,23 @@ function! gmail#imap#select(mb)
     if r =~ "\d* EXISTS"
       let parts = split(r, ' ')
       let item_count = parts[1]
-      let s:gmail_uids = range(1, item_count)
       break
     endif
   endfor
   let s:gmail_mailbox_idx = a:mb
 
-  let res = s:request("? SEARCH UNSEEN", g:gmail_timeout_for_unseen)
-  if len(res) == 0
-    call gmail#util#message('imap search unseen error(' . a:mb . ')')
-    return
-  endif
-
-  let uitems = split(res[0], ' ')
-  let s:gmail_unseens = uitems[ 2 : -1 ]
+  let s:gmail_unseens = gmail#imap#search('UNSEEN')
   let s:gmail_maibox_line[a:mb] = gmail#util#decodeUtf7(s:gmail_mailbox[a:mb].name . '(' . len(s:gmail_unseens) . ')')
   return item_count
 endfunction
 
+" FETCH
+
 function! gmail#imap#fetch_header(fs, fe)
   let res = s:request("? FETCH " . a:fs . ":" . a:fe . " rfc822.header", g:gmail_timeout)
   let list = []
-  if empty(res)
-    call gmail#util#message('imap fetch error.')
+  if s:is_response_error(res)
+    call gmail#util#error('imap fetch header error.')
     return list
   endif
 
@@ -194,6 +191,11 @@ endfunction
 
 function! gmail#imap#fetch_body(id)
   let res = s:request("? FETCH " . a:id . " RFC822", g:gmail_timeout)
+  if s:is_response_error(res)
+    call gmail#util#error('imap fetch RFC822 error.')
+    return []
+  endif
+
   let list = []
   let [ _HEADER, _HEADER_MULTI_MIME_HEADER, _HEADER_MULTI_MIME_BODY, _BODY ] = range(4)
   let status = _HEADER
@@ -295,10 +297,12 @@ function! gmail#imap#fetch_body(id)
   return list
 endfunction
 
-function! gmail#imap#search_uids(key)
-  let res = s:request("? SEARCH " . a:key, g:gmail_timeout)
-  if empty(res)
-    call gmail#util#message('imap search error.')
+" SEARCH
+
+function! gmail#imap#search(key)
+  let res = s:request("? SEARCH " . a:key, g:gmail_timeout_for_unseen)
+  if s:is_response_error(res)
+    call gmail#util#error('imap search error.')
     return []
   endif
   let items = split(res[0], ' ')
@@ -309,36 +313,30 @@ function! gmail#imap#get_header()
   return s:gmail_headers
 endfunction
 
-function! s:parse_content_type(line)
-  let st = stridx(a:line, 'charset=')
-  if st == -1
-    return g:gmail_default_encoding
-  endif
-  let st = st+8
-  if a:line[st] == '"'
-    let st += 1
-  endif
-  let ed = match(a:line, '[\";]', st)
-  if ed == -1
-    let ed = strlen(a:line)
-  endif
-  let enc = a:line[ st : ed-1 ]
-  return enc
+" STATUS
+
+function! gmail#imap#status_unseen(mailbox)
+  return gmail#imap#status('UNSEEN', a:mailbox)
 endfunction
 
-function! s:parse_content_transfer_encoding(line)
-  if a:line =~ '.*7bit'
-    return s:CTE_7BIT
-  elseif a:line =~ '.*base64'
-    return s:CTE_BASE64
-  elseif a:line =~ '.*quoted-printable'
-    return s:CTE_PRINTABLE
-  endif
-  return s:CTE_7BIT
+function! gmail#imap#status_recent(mailbox)
+  return gmail#imap#status('RECENT', a:mailbox)
 endfunction
+
+function! gmail#imap#status(stat, mailbox)
+  let res = s:request('? STATUS "' .a:mailbox . '" (' . a:stat . ')', g:gmail_timeout)
+  if s:is_response_error(res)
+    call gmail#util#error('imap status error.')
+    return -1
+  endif
+  let parts = split(res[0], ' ')
+  return parts[4][0 : -2 ]
+endfunction
+
+" STORE
 
 function! gmail#imap#store_draft(id, sign)
-  call s:request_store(a:id, '\Draft', a:sign)
+  call s:request_store(a:id, '"\Draft', a:sign)
 endfunction
 function! gmail#imap#store_answered(id, sign)
   call s:request_store(a:id, '\Answered', a:sign)
@@ -352,9 +350,6 @@ endfunction
 function! gmail#imap#store_recent(id, sign)
   call s:request_store(a:id, '\Recent', a:sign)
 endfunction
-function! gmail#imap#store_unseen(id, sign)
-  call s:request_store(a:id, '\Unseen', a:sign)
-endfunction
 function! gmail#imap#store_seen(id, sign)
   call s:request_store(a:id, '\Seen', a:sign)
 endfunction
@@ -365,16 +360,45 @@ function! s:request_store(id, flag, sign)
     let sign = '-'
   endif
 
-  let res = s:request('? store ' . a:id . ' ' . sign . 'flags ' . a:flag, g:gmail_timeout)
-  if empty(res)
-    call gmail#util#message('imap store error.')
-    return
+  if type(a:id) == type([])
+    let ids = join(a:id, ',')
+  else
+    let ids = a:id
   endif
 
-  if res[-1] !~ '? OK'
-    call gmail#util#message('imap store error.(' . res[-1] . ')')
+  if type(a:flag) == type([])
+    let flags = '(' . join(a:flag, ' ') . ')'
+  else
+    let flags = '(' . a:flag . ')'
+  endif
+
+  let res = s:request('? STORE ' . ids . ' ' . sign . 'FLAGS ' . flags, g:gmail_timeout)
+  if s:is_response_error(res)
+    call gmail#util#error('imap store error. (' . join(res, ",") . ')')
     return
   endif
+endfunction
+
+" NOOP
+
+function! gmail#imap#noop()
+  return s:common_request('NOOP')
+endfunction
+
+" EXPUNGE
+
+function! gmail#imap#expunge()
+  return s:common_request('EXPUNGE')
+endfunction
+
+" INTERNAL
+
+function! s:common_request(cmd, timeout)
+  let res = s:request('? ' . a:cmd, g:gmail_timeout)
+  if s:is_response_error(res)
+    call gmail#util#error('imap ' . a:cmd . ' error. (' . join(res, ",") . ')')
+  endif
+  return res
 endfunction
 
 function! s:request(cmd, timeout)
@@ -404,5 +428,39 @@ function! s:request(cmd, timeout)
     endif
   endif
   return ret
+endfunction
+
+function! s:is_response_error(res)
+  if empty(a:res) || a:res[-1] !~ '? OK'
+    return 1
+  endif
+endfunction
+
+function! s:parse_content_type(line)
+  let st = stridx(a:line, 'charset=')
+  if st == -1
+    return g:gmail_default_encoding
+  endif
+  let st = st+8
+  if a:line[st] == '"'
+    let st += 1
+  endif
+  let ed = match(a:line, '[\";]', st)
+  if ed == -1
+    let ed = strlen(a:line)
+  endif
+  let enc = a:line[ st : ed-1 ]
+  return enc
+endfunction
+
+function! s:parse_content_transfer_encoding(line)
+  if a:line =~ '.*7bit'
+    return s:CTE_7BIT
+  elseif a:line =~ '.*base64'
+    return s:CTE_BASE64
+  elseif a:line =~ '.*quoted-printable'
+    return s:CTE_PRINTABLE
+  endif
+  return s:CTE_7BIT
 endfunction
 

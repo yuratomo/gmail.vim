@@ -26,6 +26,10 @@ if !exists('g:gmail_default_mailbox')
   let g:gmail_default_mailbox = 'INBOX'
 endif
 
+if !exists('g:gmail_check_target_mail')
+  let g:gmail_check_target_mail = '‚·‚×‚Ä‚Ìƒ[ƒ‹'
+endif
+
 if !exists('g:gmail_default_encoding')
   let g:gmail_default_encoding = "iso-2022-jp"
 endif
@@ -38,11 +42,20 @@ if !exists('g:gmail_signature')
   endif
 endif
 
-if !exists('g:gmail_check_target_mail')
-  let g:gmail_check_target_mail = '‚·‚×‚Ä‚Ìƒ[ƒ‹'
+if !exists('g:gmail_timeout_for_unseen')
+  let g:gmail_timeout_for_unseen = 5000
 endif
 
-command! -nargs=0 Gmail :call gmail#start()
+if !exists('g:gmail_timeout_for_body')
+  let g:gmail_timeout_for_body   = 5000
+endif
+
+if !exists('g:gmail_timeout')
+  let g:gmail_timeout = 2000
+endif
+
+command! -nargs=0 Gmail             :call gmail#start()
+command! -nargs=0 GmailExit         :call gmail#exit()
 command! -nargs=0 GmailCheckNewMail :call gmail#checkNewMail()
 
 let g:loaded_gmail = 1
