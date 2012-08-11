@@ -3,9 +3,9 @@ gmail.vim
 
 Description
 -----------
-vim上でgmailを使うためのツールです。
+vim上でgmailを見るためのスクリプトです。
 imapを使ってメールを操作するので、gmail側の設定でimapを有効にする必要があります。
-メールの送信もできますが、あまり動作確認していません。
+
 
 Requirements
 ------------
@@ -16,7 +16,7 @@ Requirements
     git://github.com/Shougo/vimproc.git
 
 * openssl
-Windowsのmsysgitに含まれるopensslで動作が確認できています。
+Windowsのmsysgitに含まれるopensslで動作確認をしています。
 
     http://code.google.com/p/msysgit/
 
@@ -26,7 +26,7 @@ Setting
 
 * imapの有効化
 
-    gmailの設定でimapを有効にしてください。やり方はウェブ上で調べてください。
+    gmailの設定でimapを有効にしてください。やり方はウェブで。
 
 * vimprocのインストール
 
