@@ -23,7 +23,7 @@ function! gmail#imap#login()
   let s:sub = vimproc#popen3(cmd)
   let ret = gmail#util#response(s:sub, '^* OK', g:gmail_timeout_for_body)
   if empty(ret)
-    call gmail#util#error('imap connect error.')
+    call s:common_error('connect', res)
     return 0
   endif
 
@@ -32,7 +32,7 @@ function! gmail#imap#login()
   let s:gmail_login_now = 0
 
   if s:is_response_error(res)
-    call gmail#util#error('imap login error.')
+    call s:common_error('login', res)
     unlet g:gmail_user_pass
     return 0
   endif
@@ -43,7 +43,7 @@ endfunction
 function! s:relogin()
   let s:gmail_login_now = 1
   if gmail#imap#login() == 0
-    call gmail#util#error('imap login error.')
+    call s:common_error('login', res)
     let s:gmail_login_now = 0
     return 0
   endif
@@ -80,7 +80,7 @@ function! gmail#imap#list(mode)
 
   let res = s:request('? LIST "" "*"', g:gmail_timeout)
   if s:is_response_error(res)
-    call gmail#util#error("imap list error.")
+    call s:common_error('list', res)
     return
   endif
 
@@ -150,7 +150,7 @@ function! gmail#imap#fetch_header(fs, fe)
   let res = s:request("? FETCH " . a:fs . ":" . a:fe . " rfc822.header", g:gmail_timeout)
   let list = []
   if s:is_response_error(res)
-    call gmail#util#error('imap fetch header error.')
+    call s:common_error('fetch header', res)
     return list
   endif
 
@@ -192,7 +192,7 @@ endfunction
 function! gmail#imap#fetch_body(id)
   let res = s:request("? FETCH " . a:id . " RFC822", g:gmail_timeout)
   if s:is_response_error(res)
-    call gmail#util#error('imap fetch RFC822 error.')
+    call s:common_error('fetch body', res)
     return []
   endif
 
@@ -302,7 +302,7 @@ endfunction
 function! gmail#imap#search(key)
   let res = s:request("? SEARCH " . a:key, g:gmail_timeout_for_unseen)
   if s:is_response_error(res)
-    call gmail#util#error('imap search error.')
+    call s:common_error('fetch search', res)
     return []
   endif
   let items = split(res[0], ' ')
@@ -326,7 +326,7 @@ endfunction
 function! gmail#imap#status(stat, mailbox)
   let res = s:request('? STATUS "' .a:mailbox . '" (' . a:stat . ')', g:gmail_timeout)
   if s:is_response_error(res)
-    call gmail#util#error('imap status error.')
+    call s:common_error('fetch status', res)
     return -1
   endif
   let parts = split(res[0], ' ')
@@ -374,7 +374,7 @@ function! s:request_store(id, flag, sign)
 
   let res = s:request('? STORE ' . ids . ' ' . sign . 'FLAGS ' . flags, g:gmail_timeout)
   if s:is_response_error(res)
-    call gmail#util#error('imap store error. (' . join(res, ",") . ')')
+    call s:common_error('fetch store', res)
     return
   endif
 endfunction
@@ -396,7 +396,7 @@ endfunction
 function! s:common_request(cmd, timeout)
   let res = s:request('? ' . a:cmd, g:gmail_timeout)
   if s:is_response_error(res)
-    call gmail#util#error('imap ' . a:cmd . ' error. (' . join(res, ",") . ')')
+    call s:common_error(a:cmd, res)
   endif
   return res
 endfunction
@@ -462,5 +462,9 @@ function! s:parse_content_transfer_encoding(line)
     return s:CTE_PRINTABLE
   endif
   return s:CTE_7BIT
+endfunction
+
+function! s:common_error(cmd, res)
+  call gmail#util#error('imap ' . a:cmd . ' error. (' . join(a:res, ',') . ')')
 endfunction
 
