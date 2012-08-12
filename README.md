@@ -69,7 +69,7 @@ ScreenShots
 -----------
 
 * “®ìƒCƒ[ƒW
-xxx
+    http://yuratomo.up.seesaa.net/image/gmail.vim_20120812.PNG
 
 Other
 -----------
