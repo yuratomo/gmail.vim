@@ -3,11 +3,13 @@
 " Author: yuratomo (twitter @yusetomo)
 
 function! gmail#util#message(msg)
+call add(g:xxx, a:msg) "xxx
   echo 'Gmail: ' . a:msg
   redraw
 endfunction
 
 function! gmail#util#error(msg)
+call add(g:xxx, a:msg) "xxx
   echoerr 'Gmail: ' . a:msg
 endfunction
 

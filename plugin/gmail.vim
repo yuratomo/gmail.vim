@@ -42,8 +42,8 @@ if !exists('g:gmail_signature')
   endif
 endif
 
-if !exists('g:gmail_timeout_for_unseen')
-  let g:gmail_timeout_for_unseen = 5000
+if !exists('g:gmail_timeout_for_search')
+  let g:gmail_timeout_for_search = 5000
 endif
 
 if !exists('g:gmail_timeout_for_body')
