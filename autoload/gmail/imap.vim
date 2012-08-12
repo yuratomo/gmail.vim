@@ -48,10 +48,8 @@ function! s:relogin()
     return 0
   endif
 
-  if !exists('s:gmail_mailbox')
-    call gmail#imap#list(0)
-    call gmail#imap#select(s:gmail_mailbox_idx)
-  endif
+  call gmail#imap#list(0)
+  call gmail#imap#select(s:gmail_mailbox_idx)
 
   let s:gmail_login_now = 0
   return 1
