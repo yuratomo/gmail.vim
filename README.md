@@ -82,5 +82,5 @@ Other
 
 HISTORY
 -------
-xxx
+2012/08/12 (1.0) first release
 
