@@ -241,13 +241,13 @@ function! gmail#win#select_mailbox(mb)
   redraw
 endfunction
 
-function! gmail#win#reselect()
+function! s:reselect()
   call gmail#win#open(g:GMAIL_MODE_MAILBOX)
   let s:gmail_mailbox_item_count = gmail#imap#select(gmail#imap#mailbox_index())
 endfunction
 
 function! gmail#win#newly_list()
-  call gmail#win#reselect()
+  call s:reselect()
   call gmail#win#open(g:GMAIL_MODE_LIST)
   let newly_uids = gmail#imap#search(g:gmail_search_key)
 
@@ -267,10 +267,6 @@ function! gmail#win#newly_list()
   else
     call gmail#util#message('new message is nothing.')
   endif
-endfunction
-
-function! gmail#win#more_list()
-  call gmail#win#update_list(s:gmail_page+1, 0)
 endfunction
 
 function! s:clear_list()
@@ -337,58 +333,6 @@ function! gmail#win#update_list(page, clear)
 
 endfunction
 
-function! gmail#win#next()
-  call gmail#win#open(g:GMAIL_MODE_LIST)
-  let last = line('$')
-  let l = s:gmail_selected_list_line
-  if l == last
-    call gmail#win#more_list()
-    let last = line('$')
-    if l == last
-      call gmail#win#open(g:GMAIL_MODE_BODY)
-      return
-    endif
-  endif
-  let l += 1
-  let s:gmail_selected_list_line = l
-
-  call cursor(l, 0)
-  call s:select_and_show_body(l)
-  call gmail#win#open(g:GMAIL_MODE_BODY)
-endfunction
-
-function! gmail#win#prev()
-  let l = s:gmail_selected_list_line
-  if l == 1
-    return
-  endif
-  let l -= 1
-  let s:gmail_selected_list_line = l
-
-  call gmail#win#open(g:GMAIL_MODE_LIST)
-  call cursor(l, 0)
-  call s:select_and_show_body(l)
-  call gmail#win#open(g:GMAIL_MODE_BODY)
-endfunction
-
-function! s:select_and_show_body(l)
-  call gmail#win#hilightLine('gmailSelect', a:l)
-  let cline = getline(a:l)
-  let line = split(cline[2:], ' ')
-  call gmail#win#setline(a:l, '  ' . cline[2:])
-  call s:show_body(line[0])
-endfunction
-
-function! s:show_body(id)
-  call gmail#win#open(g:GMAIL_MODE_BODY)
-  call gmail#win#clear()
-  let list = gmail#imap#fetch_body(a:id)
-  call gmail#win#setline(1, s:gmail_body_menu)
-  call gmail#win#setline(2, list)
-  call gmail#util#message('show message ok.')
-endfunction
-
-
 function! gmail#win#click()
   let l = line('.')
   if gmail#win#mode() == g:GMAIL_MODE_MAILBOX
@@ -407,7 +351,7 @@ function! gmail#win#click()
           call gmail#util#message('Please select item by space key.')
         else
           call gmail#imap#store_seen(ids, 0)
-          call gmail#win#reselect()
+          call s:reselect()
           call gmail#win#update_list(0, 1)
         endif
       elseif menu == 'readed'
@@ -416,7 +360,7 @@ function! gmail#win#click()
           call gmail#util#message('Please select item by space key.')
         else
           call gmail#imap#store_seen(ids, 1)
-          call gmail#win#reselect()
+          call s:reselect()
           call gmail#win#update_list(0, 1)
         endif
       elseif menu == 'delete'
@@ -429,7 +373,7 @@ function! gmail#win#click()
             return
           endif
           call gmail#imap#store_deleted(ids, 1)
-          call gmail#win#reselect()
+          call s:reselect()
           call gmail#win#update_list(0, 1)
         endif
       endif
@@ -481,5 +425,60 @@ function! gmail#win#search()
     let g:gmail_search_key = input('search key:', g:gmail_search_key)
     call gmail#win#update_list(0, 1)
   endif
+endfunction
+
+function! gmail#win#more_list()
+  call gmail#win#update_list(s:gmail_page+1, 0)
+endfunction
+
+function! gmail#win#next()
+  call gmail#win#open(g:GMAIL_MODE_LIST)
+  let last = line('$')
+  let l = s:gmail_selected_list_line
+  if l == last
+    call gmail#win#more_list()
+    let last = line('$')
+    if l == last
+      call gmail#win#open(g:GMAIL_MODE_BODY)
+      return
+    endif
+  endif
+  let l += 1
+  let s:gmail_selected_list_line = l
+
+  call cursor(l, 0)
+  call s:select_and_show_body(l)
+  call gmail#win#open(g:GMAIL_MODE_BODY)
+endfunction
+
+function! gmail#win#prev()
+  let l = s:gmail_selected_list_line
+  if l == 1
+    return
+  endif
+  let l -= 1
+  let s:gmail_selected_list_line = l
+
+  call gmail#win#open(g:GMAIL_MODE_LIST)
+  call cursor(l, 0)
+  call s:select_and_show_body(l)
+  call gmail#win#open(g:GMAIL_MODE_BODY)
+endfunction
+
+function! s:select_and_show_body(l)
+  call gmail#win#hilightLine('gmailSelect', a:l)
+  let cline = getline(a:l)
+  let line = split(cline[2:], ' ')
+  call gmail#win#setline(a:l, '  ' . cline[2:])
+  call s:show_body(line[0])
+endfunction
+
+function! s:show_body(id)
+  call gmail#win#open(g:GMAIL_MODE_BODY)
+  call gmail#win#clear()
+  let list = gmail#imap#fetch_body(a:id)
+  call gmail#win#setline(1, s:gmail_body_menu)
+  call gmail#win#setline(2, list)
+  call gmail#util#message('show message ok.')
 endfunction
 
