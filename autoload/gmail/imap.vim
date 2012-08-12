@@ -8,7 +8,6 @@ let s:gmail_allow_headers = [ 'From', 'To', 'Cc', 'Bcc', 'Subject' ]
 let s:gmail_headers = {'Cc':[]}
 let s:gmail_login_now = 0
 let [ s:CTE_7BIT, s:CTE_BASE64, s:CTE_PRINTABLE ] = range(3)
-let g:xxx = [] "xxx
 
 " LOGIN/LOGOUT
 function! gmail#imap#login()
@@ -404,7 +403,6 @@ endfunction
 
 function! s:request(cmd, timeout)
   let cmd = a:cmd . "\r\n"
-call add(g:xxx, cmd) "xxx
   if s:gmail_login_now == 0
     call gmail#util#message(a:cmd)
   endif
@@ -432,7 +430,6 @@ call add(g:xxx, cmd) "xxx
 endfunction
 
 function! s:is_response_error(res)
-call add(g:xxx, a:res[-1]) "xxx
   if empty(a:res) || a:res[-1] !~ '? OK'
     return 1
   endif
