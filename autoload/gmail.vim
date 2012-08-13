@@ -52,16 +52,16 @@ function! gmail#checkNewMail()
   let target = ''
   let idx = 0
   for item in gmail#imap#get_mailbox()
-    if item.dname =~ g:gmail_check_target_mail
-"   if item.dname =~ g:gmail_default_mailbox
+"   if item.dname =~ g:gmail_check_target_mail
+    if item.dname =~ g:gmail_default_mailbox
       let target = item.name
       break
     endif
     let idx += 1
   endfor
 
-" let cnt = gmail#imap#status_unseen(target)
-  let cnt = gmail#imap#status_recent(target)
+  let cnt = gmail#imap#status_unseen(target)
+" let cnt = gmail#imap#status_recent(target)
   redraw
   if cnt > 0
     call gmail#util#message('You have ' . cnt . ' new mails!!' )
