@@ -64,7 +64,7 @@ function! gmail#win#open(mode)
   if a:mode == g:GMAIL_MODE_MAILBOX || a:mode == g:GMAIL_MODE_LIST
     nnoremap <buffer> u   :call gmail#win#update()<CR>
     nnoremap <buffer> s   :call gmail#win#search()<CR>
-    nnoremap <buffer> c   :call gmail#smtp#open('',[],'')<CR>
+    nnoremap <buffer> c   :call gmail#smtp#open('',[],'',[])<CR>
     nnoremap <buffer> a   :call gmail#win#select_all()<CR>
     nnoremap <buffer> <space>   :call gmail#win#select('.',  1, '')<CR>
     nnoremap <buffer> <s-space> :call gmail#win#select('.', -1, '')<CR>
@@ -390,11 +390,11 @@ function! gmail#win#click()
       elseif menu == 'prev'
         call gmail#win#prev()
       elseif menu == 'reply'
-        call gmail#smtp#open(head.Return_Path, [], 'Re:' . head.Subject)
+        call gmail#smtp#open(head.Return_Path, [], 'Re:' . head.Subject, s:replyBody())
       elseif menu == 'reply_all'
-        call gmail#smtp#open(head.Return_Path, head.Cc, 'Re:' . head.Subject)
+        call gmail#smtp#open(head.Return_Path, head.Cc, 'Re:' . head.Subject, s:replyBody())
       elseif menu == 'forward'
-        call gmail#smtp#open('', [], 'Fw:' . head.Subject)
+        call gmail#smtp#open('', [], 'Fw:' . head.Subject, s:replyBody())
       elseif menu == 'easy_html_view'
         call gmail#util#neglect_htmltag()
       endif
@@ -410,6 +410,10 @@ function! gmail#win#click()
       endif
     endif
   endif
+endfunction
+
+function! s:replyBody()
+  return map(s:last_list, '">" . v:val')
 endfunction
 
 function! gmail#win#update()
@@ -476,9 +480,9 @@ endfunction
 function! s:show_body(id)
   call gmail#win#open(g:GMAIL_MODE_BODY)
   call gmail#win#clear()
-  let list = gmail#imap#fetch_body(a:id)
+  let s:last_list = gmail#imap#fetch_body(a:id)
   call gmail#win#setline(1, s:gmail_body_menu)
-  call gmail#win#setline(2, list)
+  call gmail#win#setline(2, s:last_list)
   call gmail#util#message('show message ok.')
 endfunction
 

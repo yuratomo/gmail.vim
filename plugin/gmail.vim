@@ -26,10 +26,6 @@ if !exists('g:gmail_default_mailbox')
   let g:gmail_default_mailbox = 'INBOX'
 endif
 
-if !exists('g:gmail_check_target_mail')
-  let g:gmail_check_target_mail = '‚·‚×‚Ä‚Ìƒ[ƒ‹'
-endif
-
 if !exists('g:gmail_default_encoding')
   let g:gmail_default_encoding = "iso-2022-jp"
 endif

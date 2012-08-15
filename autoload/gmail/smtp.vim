@@ -5,7 +5,7 @@
 let s:gmail_sendmail_normalize_target = [ 'To', 'Cc', 'Bcc' ]
 let s:gmail_sendmail_headers = [ 'To:', 'Cc:', 'Bcc:', 'Subject:' ]
 
-function! gmail#smtp#open(to, cc, subject)
+function! gmail#smtp#open(to, cc, subject, body)
   call gmail#win#open(g:GMAIL_MODE_CREATE)
   call gmail#win#clear()
   call gmail#win#setline(1, [ '[send]', "To: " . s:normalize_mail(a:to)])
@@ -15,6 +15,7 @@ function! gmail#smtp#open(to, cc, subject)
     call gmail#win#setline(3, "Cc: ")
   endif
   call gmail#win#setline(line('$')+1, [ "Bcc: ", "Subject: " . a:subject, "", g:gmail_signature ])
+  call gmail#win#setline(line('$')+1, a:body)
   setl modifiable
 endfunction
 
@@ -149,3 +150,4 @@ function! s:normalize_mail(t)
   let t = substitute(t,   '>.*', '', '')
   return  substitute(t,   ' ', '', 'g')
 endfunction
+
