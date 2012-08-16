@@ -380,13 +380,13 @@ endfunction
 " NOOP
 
 function! gmail#imap#noop()
-  return s:common_request('NOOP')
+  return s:common_request('NOOP', 100)
 endfunction
 
 " EXPUNGE
 
 function! gmail#imap#expunge()
-  return s:common_request('EXPUNGE')
+  return s:common_request('EXPUNGE', g:gmail_timeout)
 endfunction
 
 " INTERNAL
