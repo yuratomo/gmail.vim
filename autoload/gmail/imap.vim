@@ -21,8 +21,8 @@ function! gmail#imap#login()
 
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
   let s:sub = vimproc#popen3(cmd)
-  let ret = gmail#util#response(s:sub, '^* OK', g:gmail_timeout_for_body)
-  if empty(ret)
+  let res = gmail#util#response(s:sub, '^* OK', g:gmail_timeout_for_body)
+  if empty(res)
     call s:common_error('connect', res)
     return 0
   endif

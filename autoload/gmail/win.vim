@@ -11,6 +11,11 @@ let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_C
 let s:gmail_mailbox_item_count = 0
 
 function! gmail#win#open(mode)
+  let res = gmail#imap#noop()
+  if empty(res) || res[-1] !~ '? OK'
+    return
+  endif
+
   let pref = s:gmail_winname[a:mode]
   let bufname = s:gmail_title_prefix . pref
 
