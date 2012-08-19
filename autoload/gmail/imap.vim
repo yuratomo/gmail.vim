@@ -18,10 +18,9 @@ function! gmail#imap#login()
     let g:gmail_user_pass = inputsecret('input password:')
   endif
   call gmail#imap#exit()
-
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
   let s:sub = vimproc#popen3(cmd)
-  let res = gmail#util#response(s:sub, '^* OK', g:gmail_timeout_for_body)
+  let res = gmail#util#response(s:sub, '^* OK', g:gmail_timeout)
   if empty(res)
     call s:common_error('connect', res)
     return 0
@@ -188,7 +187,7 @@ function! gmail#imap#fetch_header(fs, fe)
 endfunction
 
 function! gmail#imap#fetch_body(id)
-  let res = s:request("? FETCH " . a:id . " RFC822", g:gmail_timeout)
+  let res = s:request("? FETCH " . a:id . " RFC822", g:gmail_timeout_for_body)
   if s:is_response_error(res)
     call s:common_error('fetch body', res)
     return []

@@ -67,10 +67,11 @@ function! gmail#win#open(mode)
   nnoremap <buffer> <TAB>   :call gmail#win#tab(1)<CR>
   nnoremap <buffer> <s-TAB> :call gmail#win#tab(-1)<CR>
   if a:mode == g:GMAIL_MODE_MAILBOX || a:mode == g:GMAIL_MODE_LIST
-    nnoremap <buffer> u   :call gmail#win#update()<CR>
-    nnoremap <buffer> s   :call gmail#win#search()<CR>
-    nnoremap <buffer> c   :call gmail#smtp#open('',[],'',[])<CR>
-    nnoremap <buffer> a   :call gmail#win#select_all()<CR>
+    nnoremap <buffer> u     :call gmail#win#update()<cr>
+    nnoremap <buffer> <s-u> :call gmail#win#update_all()<cr>
+    nnoremap <buffer> s     :call gmail#win#search()<CR>
+    nnoremap <buffer> c     :call gmail#smtp#open('',[],'',[])<CR>
+    nnoremap <buffer> a     :call gmail#win#select_all()<CR>
     nnoremap <buffer> <space>   :call gmail#win#select('.',  1, '')<CR>
     nnoremap <buffer> <s-space> :call gmail#win#select('.', -1, '')<CR>
   endif
@@ -227,16 +228,19 @@ function! gmail#win#update_mailboxs(mode)
 endfunction
 
 function! gmail#win#update_cur_mailbox(mb)
-  let mailbox = gmail#imap#get_mailbox()
-  let unseen = gmail#imap#status_unseen(mailbox[a:mb-1].name)
-  if unseen > 0
-    let unseen = '(' . unseen . ')'
-  else
-    let unseen = '(0)'
-  endif
-  let line = mailbox[a:mb-1].dname . unseen
-  call gmail#imap#set_mailbox_line(a:mb, line)
-  call gmail#win#setline(a:mb, line)
+  try
+    let mailbox = gmail#imap#get_mailbox()
+    let unseen = gmail#imap#status_unseen(mailbox[a:mb-1].name)
+    if unseen > 0
+      let unseen = '(' . unseen . ')'
+    else
+      let unseen = '(0)'
+    endif
+    let line = mailbox[a:mb-1].dname . unseen
+    call gmail#imap#set_mailbox_line(a:mb-1, line)
+    call gmail#win#setline(a:mb, line)
+  catch /.*/
+  endtry
 endfunction
 
 function! gmail#win#select_mailbox(mb)
@@ -426,6 +430,14 @@ function! gmail#win#update()
     call gmail#win#update_cur_mailbox(line('.'))
   elseif gmail#win#mode() == g:GMAIL_MODE_LIST
     call gmail#win#update_list(0, 1)
+  endif
+endfunction
+
+function! gmail#win#update_all()
+  if gmail#win#mode() == g:GMAIL_MODE_MAILBOX
+    for l in range(1,line('$'))
+      call gmail#win#update_cur_mailbox(l)
+    endfor
   endif
 endfunction
 

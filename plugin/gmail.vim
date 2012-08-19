@@ -43,7 +43,7 @@ if !exists('g:gmail_timeout_for_search')
 endif
 
 if !exists('g:gmail_timeout_for_body')
-  let g:gmail_timeout_for_body   = 5000
+  let g:gmail_timeout_for_body   = 10000
 endif
 
 if !exists('g:gmail_timeout')

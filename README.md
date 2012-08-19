@@ -26,12 +26,12 @@ Setting
 
 * imapの有効化
 
-    gmailの設定でimapを有効にしてください。やり方はウェブで。
+    gmailの設定でimapを有効にしてください。やり方はウェブで・・・(^^;
 
 * vimprocのインストール
 
 * opensslにパスを通す
-    
+
     let &path = $path . 'c:\Program files\git\bin'
 
 * 必要なら次のような設定をvimrcに記載する。（必須ではない)
