@@ -47,6 +47,12 @@ function! gmail#exit()
   call gmail#win#all_close()
 endfunction
 
+function! gmail#changeUser()
+  unlet g:gmail_user_name
+  unlet g:gmail_user_pass
+  call gmail#start()
+endfunction
+
 function! gmail#checkNewMail()
   call gmail#imap#list(0)
   let target = ''

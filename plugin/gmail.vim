@@ -51,6 +51,7 @@ if !exists('g:gmail_timeout')
 endif
 
 command! -nargs=0 Gmail             :call gmail#start()
+command! -nargs=0 GmailChangeUser   :call gmail#changeUser()
 command! -nargs=0 GmailExit         :call gmail#exit()
 command! -nargs=0 GmailCheckNewMail :call gmail#checkNewMail()
 
