@@ -137,7 +137,7 @@ function! s:sendmail(header, to, messages)
   unlet sub
 
   if err == 0
-    call gmail#util#message('send mail ok.')
+    call gmail#util#message('send mail normally.')
     call gmail#win#open(g:GMAIL_MODE_BODY)
   else
     call gmail#util#error('send mail error!!')

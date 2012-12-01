@@ -274,7 +274,7 @@ function! gmail#win#newly_list()
     call gmail#win#setline(1, s:gmail_list)
     redraw
   else
-    call gmail#util#message('new message is nothing.')
+    call gmail#util#message('No new messages.')
   endif
 endfunction
 
@@ -357,7 +357,7 @@ function! gmail#win#click()
       elseif menu == 'unread'
         let ids = gmail#win#get_selections()
         if empty(ids)
-          call gmail#util#message('Please select item by space key.')
+          call gmail#util#message('Please select an item by space key.')
         else
           call gmail#imap#store_seen(ids, 0)
           call s:reselect()
@@ -366,7 +366,7 @@ function! gmail#win#click()
       elseif menu == 'readed'
         let ids = gmail#win#get_selections()
         if empty(ids)
-          call gmail#util#message('Please select item by space key.')
+          call gmail#util#message('Please select an item by space key.')
         else
           call gmail#imap#store_seen(ids, 1)
           call s:reselect()
@@ -375,10 +375,10 @@ function! gmail#win#click()
       elseif menu == 'delete'
         let ids = gmail#win#get_selections()
         if empty(ids)
-          call gmail#util#message('Please select item by space key.')
+          call gmail#util#message('Please select an item by space key.')
         else
           if gmail#util#confirm('Delete selected files. Are you OK?[y/n]:') == 0
-            call gmail#util#message('Cancel delete...')
+            call gmail#util#message('Cancel deletion...')
             return
           endif
           call gmail#imap#store_deleted(ids, 1)
@@ -500,6 +500,6 @@ function! s:show_body(id)
   let s:last_list = gmail#imap#fetch_body(a:id)
   call gmail#win#setline(1, s:gmail_body_menu)
   call gmail#win#setline(2, s:last_list)
-  call gmail#util#message('show message ok.')
+  call gmail#util#message('show message normally.')
 endfunction
 

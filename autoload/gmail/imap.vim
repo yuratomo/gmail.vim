@@ -15,7 +15,7 @@ function! gmail#imap#login()
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
   endif
   if !exists('g:gmail_user_pass')
-    let g:gmail_user_pass = inputsecret('input password:')
+    let g:gmail_user_pass = inputsecret('input your gmail password:')
   endif
   call gmail#imap#exit()
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
