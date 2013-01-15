@@ -70,7 +70,7 @@ function! gmail#checkNewMail()
   if cnt > 0
     call gmail#util#message('You have ' . cnt . ' new mails!!' )
   elseif cnt == 0
-    call gmail#util#message('There is no new mail.')
+    call gmail#util#message('There is no new mails.')
   else
     call gmail#util#message('Check new mail error.')
   endi
