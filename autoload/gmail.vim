@@ -9,7 +9,7 @@
 function! gmail#start()
   " check depend
   if !has('iconv')
-    call gmail#util#message('gmail.vim depends on  iconv. Please install it.')
+    call gmail#util#message('gmail.vim depends on +iconv. Please use vim with +iconv.')
     return
   endif
   if !exists('g:loaded_vimproc')
