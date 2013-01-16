@@ -5,7 +5,7 @@
 let s:gmail_title_prefix = 'gmail-'
 let g:gmail_search_key = 'ALL'
 let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new' ]
-let s:gmail_list_menu = '   [more] [update] [unread] [readed] [delete]'
+let s:gmail_list_menu = '   [more] [update] [unread] [read] [delete]'
 let s:gmail_body_menu = '[next] [prev] [reply] [reply_all] [forward] [easy_html_view]'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
 let s:gmail_mailbox_item_count = 0
@@ -36,7 +36,7 @@ function! gmail#win#open(mode)
     wincmd K
     exe 'res ' . string(g:gmail_page_size+1)
   else
-    let finded = 0
+    let found = 0
     let winnum = winnr('$')
     for winno in range(1, winnum)
       let bn = bufname(winbufnr(winno))
@@ -44,10 +44,10 @@ function! gmail#win#open(mode)
       let title_list = s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_LIST]
       if bn != title_mbox && bn != title_list
          exe winno . "wincmd w"
-         let finded = 1
+         let found = 1
       endif
     endfor
-    if finded == 0
+    if found == 0
       botright new
       wincmd J
     endif
@@ -363,7 +363,7 @@ function! gmail#win#click()
           call s:reselect()
           call gmail#win#update_list(0, 1)
         endif
-      elseif menu == 'readed'
+      elseif menu == 'read'
         let ids = gmail#win#get_selections()
         if empty(ids)
           call gmail#util#message('Please select an item by space key.')
