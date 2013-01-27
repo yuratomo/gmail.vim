@@ -1,5 +1,5 @@
 " File: autoload/gmail/imap.vim
-" Last Modified: 2012.08.10
+" Last Modified: 2013.01.27
 " Author: yuratomo (twitter @yusetomo)
 
 let s:gmail_mailbox_idx = 0
@@ -374,6 +374,27 @@ function! s:request_store(id, flag, sign)
     call s:common_error('fetch store', res)
     return
   endif
+endfunction
+
+" COPY
+
+function! gmail#imap#copy(id, mailbox)
+  return s:common_request('COPY ' . a:id . ' ' . a:mailbox, g:gmail_timeout)
+endfunction
+
+" ARCHIVE
+
+function! gmail#imap#archive(id)
+  let ret = gmail#imap#store_deleted(a:id, 1)
+  if empty(ret)
+    return
+  endif
+
+  let ret = gmail#imap#expunge()
+  if empty(ret)
+    return
+  endif
+
 endfunction
 
 " NOOP

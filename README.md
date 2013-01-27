@@ -83,4 +83,5 @@ Other
 HISTORY
 -------
 2012/08/12 (1.0) first release
-
+2013/01/28 (1.1) append 'archive' feature
+                 remove 'delete' feature

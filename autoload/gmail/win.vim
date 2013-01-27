@@ -5,7 +5,7 @@
 let s:gmail_title_prefix = 'gmail-'
 let g:gmail_search_key = 'ALL'
 let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new' ]
-let s:gmail_list_menu = '   [more] [update] [unread] [read] [delete]'
+let s:gmail_list_menu = '   [more] [update] [unread] [read] [archive]'
 let s:gmail_body_menu = '[next] [prev] [reply] [reply_all] [forward] [easy_html_view]'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
 let s:gmail_mailbox_item_count = 0
@@ -372,16 +372,16 @@ function! gmail#win#click()
           call s:reselect()
           call gmail#win#update_list(0, 1)
         endif
-      elseif menu == 'delete'
+      elseif menu == 'archive'
         let ids = gmail#win#get_selections()
         if empty(ids)
           call gmail#util#message('Please select an item by space key.')
         else
-          if gmail#util#confirm('Delete selected files. Are you OK?[y/n]:') == 0
-            call gmail#util#message('Cancel deletion...')
+          if gmail#util#confirm('Archive selected files. Are you OK?[y/n]:') == 0
+            call gmail#util#message('Cancel archive...')
             return
           endif
-          call gmail#imap#store_deleted(ids, 1)
+          call gmail#imap#archive(ids)
           call s:reselect()
           call gmail#win#update_list(0, 1)
         endif
