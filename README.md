@@ -3,20 +3,23 @@ gmail.vim
 
 Description
 -----------
-vim上でgmailを見るためのスクリプトです。
-imapを使ってメールを操作するので、gmail側の設定でimapを有効にする必要があります。
+The vim script for viewing gmail on vim.
+You need to enable imap settings gmail, because this plugin use imap.
 
 
 Requirements
 ------------
-必要なのものは次のとおり。
 
 * vimproc
+Interactive command execution in Vim.
 
     git://github.com/Shougo/vimproc.git
 
 * openssl
-Windowsのmsysgitに含まれるopensslで動作確認をしています。
+A toolkit implementing SSL v2/v3 and TLS protocols with full-strength cryptography world-wide.
+I have been tested to work with openssl included in msysgit for Windows.
+
+    http://www.openssl.org/
 
     http://code.google.com/p/msysgit/
 
@@ -24,60 +27,62 @@ Windowsのmsysgitに含まれるopensslで動作確認をしています。
 Setting
 -------
 
-* imapの有効化
+* Enable imap
+    Please enable imap settings gmail.
+    (Please search on yourself)
 
-    gmailの設定でimapを有効にしてください。やり方はウェブで・・・(^^;
+* Install vimproc
+    If you have installed Vundle, please set as follows in your .vimrc.
 
-* vimprocのインストール
+        Bundle git://github.com/Shougo/vimproc.git
 
-* opensslにパスを通す
+* Through the path to openssl
 
     let &path = $path . 'c:\Program files\git\bin'
 
-* 必要なら次のような設定をvimrcに記載する。（必須ではない)
+* vimrc settings such as described in the following. (Not required)
 
-  - サーバーの設定（デフォルトは以下のとおり)
+  - Server settings
 
-    let g:gmail_imap = 'imap.gmail.com:993'
+        let g:gmail_imap = 'imap.gmail.com:993'
 
-    let g:gmail_smtp = 'smtp.gmail.com:465'
+        let g:gmail_smtp = 'smtp.gmail.com:465'
 
-  - ユーザー名の指定
+  - User name settings
 
-    let g:gmail_user_name = 'xxx@gmail.com'
+        let g:gmail_user_name = 'xxx@gmail.com'
 
-  - メール送信時の署名
+  - Signature when sending mail
 
-    let g:gmail_signature = '# ' . g:gmail_user_name . '(by gmail.vim)'
+        let g:gmail_signature = '# ' . g:gmail_user_name . '(by gmail.vim)'
 
 
 Usage
 -----
 
-* 起動
-
-次のコマンドをたたくだけです。
+* Start
+Use the following commands in Command mode to start Gmail.
 
     :Gmail
 
-* 操作
-
-先頭行に表示されているものがメニューです。行いたい操作上でEnterキーを押してください。
+* Operations
+The first line of each screen is the menu.
+Please move cursor on the menu you want to perform, and press the Enter key.
 
 
 ScreenShots
 -----------
 
-* 動作イメージ
+* Screen Image
 ![sample1](http://yuratomo.up.seesaa.net/image/gmail.vim_20120812.PNG "sample1")
 
 Other
 -----------
 
-* 著作権・免責等
-本スクリプトによって発生した直接的、間接的に生じたいかなる利益の損失や
-損害に対しても作者は一切の責任を負いません。
-あらゆる損害の免責をご承諾いただくことを使用条件とします。
+* The disclaimers and copyright etc.
+The author does not assume any responsibility for damages or any loss of profits 
+resulting directly or indirectly caused by this script.
+We will use the condition that you accept the disclaimer of any damages.
 
 
 HISTORY
@@ -85,3 +90,4 @@ HISTORY
 2012/08/12 (1.0) first release
 2013/01/28 (1.1) append 'archive' feature
                  remove 'delete' feature
+2013/02/05       translate README.md
