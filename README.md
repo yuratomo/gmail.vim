@@ -13,14 +13,13 @@ Requirements
 * vimproc
 Interactive command execution in Vim.
 
-    git://github.com/Shougo/vimproc.git
+    https://github.com/Shougo/vimproc
 
 * openssl
 A toolkit implementing SSL v2/v3 and TLS protocols with full-strength cryptography world-wide.
 I have been tested to work with openssl included in msysgit for Windows.
 
     http://www.openssl.org/
-
     http://code.google.com/p/msysgit/
 
 
@@ -61,11 +60,13 @@ Usage
 -----
 
 * Start
+
 Use the following commands in Command mode to start Gmail.
 
     :Gmail
 
 * Operations
+
 The first line of each screen is the menu.
 Please move cursor on the menu you want to perform, and press the Enter key.
 
@@ -74,20 +75,24 @@ ScreenShots
 -----------
 
 * Screen Image
+
 ![sample1](http://yuratomo.up.seesaa.net/image/gmail.vim_20120812.PNG "sample1")
 
 Other
 -----------
 
 * The disclaimers and copyright etc.
-The author does not assume any responsibility for damages or any loss of profits 
-resulting directly or indirectly caused by this script.
-We will use the condition that you accept the disclaimer of any damages.
+
+    The author does not assume any responsibility for damages or any loss of profits 
+    resulting directly or indirectly caused by this script.
+    We will use the condition that you accept the disclaimer of any damages.
 
 
 HISTORY
 -------
-2012/08/12 (1.0) first release
-2013/01/28 (1.1) append 'archive' feature
-                 remove 'delete' feature
-2013/02/05       translate README.md
+    2012/08/12 (1.0) first release
+
+    2013/01/28 (1.1) append 'archive' feature
+                     remove 'delete' feature
+
+    2013/02/05       translate README.md
