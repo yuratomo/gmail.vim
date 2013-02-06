@@ -1,0 +1,269 @@
+*gmailvim.txt*   Gmail for Vim
+
+                  ----------------------------------
+                              Gmail.vim
+                  ----------------------------------
+
+                                                               Version: 1.2
+
+==============================================================================
+CONTENTS                                                   *gmailvim-contents*
+
+    1. Intro                         |gmailvim|
+    2. Requirements                  |gmailvim-requirements|
+    3. Quick setup and usage         |gmailvim-setup-usage|
+    4. Variables                     |gmailvim-variables|
+    5. Mappings                      |gmailvim-mappings|
+        5.1. Mailbox                 |gmailvim-mappings-mailbox|
+        5.2. Mail list               |gmailvim-mappings-list|
+        5.3. Mail preview            |gmailvim-mappings-preview|
+    6. Commands                      |gmailvim-commands|
+    7. License                       |gmailvim-license|
+
+==============================================================================
+1. Intro                                                            *gmailvim*
+
+Gmail.vim is a viewing gmail on vim.
+You need to enable imap settings gmail, because this plugin use imap.
+Please refer to the README.md as a quick reference.
+
+
+==============================================================================
+2. Requirements                                        *gmailvim-requirements*
+
+*vimproc*
+        Interactive command execution in Vim.
+
+        - https://github.com/Shougo/vimproc
+
+*openssl*
+        A toolkit implementing SSL v2/v3 and TLS protocols with full-strength
+        cryptography world-wide.  I have been tested to work with openssl
+        included in msysgit for Windows.
+
+        - http://www.openssl.org/
+        - http://code.google.com/p/msysgit/
+
+==============================================================================
+3. Quick setup and usage                                *gmailvim-setup-usage*
+
+SETUP                                                         *gmailvim-setup*
+
+* Enable imap
+        Please enable imap settings gmail.
+        (Please search on yourself)
+
+* Install vimproc
+        If you have installed Vundle, please set as follows in your .vimrc.
+
+            Bundle git://github.com/Shougo/vimproc.git
+
+* Through the path to openssl
+
+            let &path = $path . 'c:\Program files\git\bin'
+
+* vimrc settings such as described in the following. (Not required)
+
+        - Server settings
+
+            let g:gmail_imap = 'imap.gmail.com:993'
+            let g:gmail_smtp = 'smtp.gmail.com:465'
+
+        - User name settings
+
+            let g:gmail_user_name = 'xxx@gmail.com'
+
+
+USAGE                                                         *gmailvim-usage*
+
+* Start
+        Use the following commands in Command mode to start Gmail.
+
+            :Gmail
+
+* Operations
+        The first line of each screen is the menu.
+        Please move cursor on the menu you want to perform, and press the
+        Enter key.
+
+==============================================================================
+4. Variables                                              *gmailvim-variables*
+
+*g:gmail_user_name*
+        This variable specify the user name.
+
+        Example: let g:gmail_user_name = 'xxxxx@gmail.com'
+
+*g:gmail_command*
+        This variable specify the openssl command.
+        Default: 'openssl'
+
+*g:gmail_imap*
+        This variable specify the imap server name.
+        Default: 'imap.gmail.com:993'
+
+*g:gmail_smtp*
+        This variable specify the smtp server name.
+        Default: 'smtp.gmail.com:465'
+
+*g:gmail_page_size*
+        This variable specify the number of lines at mail-list-window.
+        Default: 10
+
+        Note: Gmail's Fetch is very slow. Therefore, you should not 
+              increase much good.
+
+*g:gmail_default_mailbox*
+        This variable specify the default mailbox name.
+        Default: 'INBOX'
+
+        Note: You probably do not need to change.
+
+*g:gmail_default_encoding*
+        This variable specify the default encoding.
+        Default: 'iso-2022-jp'
+
+*g:gmail_signature*
+        Setup the mail signature.
+        Default: '# ' . g:gmail_user_name . '(by gmail.vim)'
+
+*g:gmail_timeout_for_search*
+        This variable specify the imap search-command timeout.
+        Default: 4000
+
+        Note: You probably do not need to change.
+
+*g:gmail_timeout_for_body*
+        This variable specify the imap body-command timeout.
+        Default: 10000
+
+        Note: You probably do not need to change.
+
+*g:gmail_timeout*
+        This variable specify the imap command timeout.
+        Default: 2000
+
+        Note: You probably do not need to change.
+
+
+==============================================================================
+5. Mappings                                                *gmailvim-mappings*
+There are mappings in gmail.vim.
+
+------------------------------------------------------------------------------
+5.1. Mailbox
+
+NORMAL MODE                                        *gmailvim-mappings-mailbox*
+<CR> 
+        Open the mailbox under the cursor.
+
+u
+        Update the mailbox under the cursor.
+
+<s-u>
+        Update all the mailbox.
+
+c
+        Create new the mail. This function is beta.
+
+
+------------------------------------------------------------------------------
+5.2. Mail list
+
+NORMAL MODE                                           *gmailvim-mappings-list*
+<CR> 
+        Open the mail under the cursor. If the cursor is top, execute menu
+        under the cursor.
+
+<TAB>
+        Move focus to next menu.
+
+<s-TAB>
+        Move focus to previous menu.
+
+u
+        Update the mail list.
+
+c
+        Create new the mail. This function is beta.
+
+a
+        Select all the mails that is displayed.
+
+<space>
+        Select the mail and move down the cursor.
+
+<s-space>
+        Select the mail and move up the cursor.
+
+
+------------------------------------------------------------------------------
+5.3. Mail preview
+
+NORMAL MODE                                        *gmailvim-mappings-preview*
+<CR> 
+        Open the mail under the cursor.
+
+<TAB>
+        Move focus to next menu.
+
+<s-TAB>
+        Move focus to previous menu.
+
+
+==============================================================================
+6. Commands                                                *gmailvim-commands*
+
+*:Gmail*
+    Open gmail in vim.
+
+*:GmailChangeUser*
+    Change gmail account, even if you specify g:gmail_user_name.
+
+*:GmailCheckNewMail*
+    Check for new mail.
+
+*:GmailExit*
+    Exit gmail.vim
+
+
+==============================================================================
+7. Todo                                                        *gmailvim-todo*
+
+* Attachment file 
+    - プレビュー表示時は添付ファイルは受信しないようにする。
+    - 添付ファイルの保存
+    - メール送信時に添付ファイルをつけて送れるようにする。
+
+* HTML mail
+    - まじめに表示できるようにする
+
+
+==============================================================================
+8. License                                                  *gmailvim-license*
+
+The MIT Licence
+http://www.opensource.org/licenses/mit-license.php
+
+Copyright (c) 2012-2013 yuratomo
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+
+
+ vim:tw=78:ts=8:ft=help

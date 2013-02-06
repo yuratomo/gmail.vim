@@ -42,7 +42,6 @@ endfunction
 function! s:relogin()
   let s:gmail_login_now = 1
   if gmail#imap#login() == 0
-    call s:common_error('login', res)
     let s:gmail_login_now = 0
     return 0
   endif
