@@ -70,6 +70,24 @@ Use the following commands in Command mode to start Gmail.
 The first line of each screen is the menu.
 Please move cursor on the menu you want to perform, and press the Enter key.
 
+Two Factor Authentication
+-------------------------
+
+* Setup an application specific password for gmail.vim under your google security settings.
+* Create the following ~/.gmailvimrc
+
+```vim
+let g:gmail_user_name = 'xxx@gmail.com'
+let g:gmail_user_pass = 'application_specific_password'
+```
+
+```bash
+chmod 700 ~/.gmailvimrc
+# NOTE THE DOUBLE ARROW - SINGLE WILL OVERWRITE YOUR VIMRC
+echo 'source ~/.gmailvimrc' >> ~/.vimrc
+```
+
+This will allow you to keep your application specific password private, even if you share your vimrc publically via github or elsewhere.
 
 ScreenShots
 -----------
