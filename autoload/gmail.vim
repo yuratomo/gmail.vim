@@ -49,7 +49,7 @@ endfunction
 
 function! gmail#changeUser()
   unlet g:gmail_user_name
-  unlet g:gmail_user_pass
+  call gmail#imap#clear_password()
   call gmail#start()
 endfunction
 

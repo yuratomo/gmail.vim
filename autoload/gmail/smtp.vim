@@ -5,6 +5,10 @@
 let s:gmail_sendmail_normalize_target = [ 'To', 'Cc', 'Bcc' ]
 let s:gmail_sendmail_headers = [ 'To:', 'Cc:', 'Bcc:', 'Subject:' ]
 
+function! gmail#smtp#set_password(pass)
+  let s:gmail_user_pass = a:pass
+endfunction
+
 function! gmail#smtp#open(to, cc, subject, body)
   call gmail#win#open(g:GMAIL_MODE_CREATE)
   call gmail#win#clear()
@@ -54,7 +58,7 @@ function! s:sendmail(header, to, messages)
   let bytes = [ 0 ]
   call extend(bytes, gmail#util#str2bytes(g:gmail_user_name))
   call add(bytes, 0)
-  call extend(bytes, gmail#util#str2bytes(g:gmail_user_pass))
+  call extend(bytes, gmail#util#str2bytes(s:gmail_user_pass))
   let AUTH = gmail#util#encodeBase64(bytes) . "\r\n"
 
   let bidx = 0

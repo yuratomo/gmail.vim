@@ -9,13 +9,23 @@ let s:gmail_headers = {'Cc':[]}
 let s:gmail_login_now = 0
 let [ s:CTE_7BIT, s:CTE_BASE64, s:CTE_PRINTABLE ] = range(3)
 
+function! gmail#imap#set_password(pass)
+  let s:gmail_user_pass = a:pass
+  call gmail#smtp#set_password(a:pass)
+endfunction
+
+function! gmail#imap#clear_password()
+  unlet s:gmail_user_pass
+endfunction
+
 " LOGIN/LOGOUT
 function! gmail#imap#login()
   if !exists('g:gmail_user_name')
     let g:gmail_user_name = input('input mail address:', '@gmail.com')
   endif
-  if !exists('g:gmail_user_pass')
-    let g:gmail_user_pass = inputsecret('input your gmail password:')
+  if !exists('s:gmail_user_pass')
+    let s:gmail_user_pass = inputsecret('input your gmail password:')
+    call gmail#smtp#set_password(s:gmail_user_pass)
   endif
   call gmail#imap#exit()
   let cmd = [g:gmail_command, 's_client', '-connect', g:gmail_imap, '-quiet']
@@ -27,12 +37,12 @@ function! gmail#imap#login()
   endif
 
   let s:gmail_login_now = 1
-  let res = s:request("? LOGIN " . g:gmail_user_name . " " . g:gmail_user_pass, g:gmail_timeout)
+  let res = s:request("? LOGIN " . g:gmail_user_name . " " . s:gmail_user_pass, g:gmail_timeout)
   let s:gmail_login_now = 0
 
   if s:is_response_error(res)
     call s:common_error('login', res)
-    unlet g:gmail_user_pass
+    unlet s:gmail_user_pass
     return 0
   endif
 

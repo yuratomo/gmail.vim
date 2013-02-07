@@ -74,17 +74,18 @@ Two Factor Authentication
 -------------------------
 
 * Setup an application specific password for gmail.vim under your google security settings.
-* Create the following ~/.gmailvimrc
+* Create the following ~/.anyname
+* Please set the file name that can not be analogized to .anyname.
 
 ```vim
 let g:gmail_user_name = 'xxx@gmail.com'
-let g:gmail_user_pass = 'application_specific_password'
+call gmail#imap#set_password('application_specific_password')
 ```
 
 ```bash
-chmod 700 ~/.gmailvimrc
+chmod 700 ~/.anyname
 # NOTE THE DOUBLE ARROW - SINGLE WILL OVERWRITE YOUR VIMRC
-echo 'source ~/.gmailvimrc' >> ~/.vimrc
+echo 'source ~/.anyname' >> ~/.vimrc
 ```
 
 This will allow you to keep your application specific password private, even if you share your vimrc publically via github or elsewhere.
