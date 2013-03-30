@@ -4,7 +4,7 @@
                               Gmail.vim
                   ----------------------------------
 
-                                                               Version: 1.2
+                                                               Version: 1.3
 
 ==============================================================================
 CONTENTS                                                   *gmailvim-contents*
@@ -118,6 +118,15 @@ USAGE                                                         *gmailvim-usage*
         Default: 'INBOX'
 
         Note: You probably do not need to change.
+
+*g:gmail_mailbox_trash*
+        This variable specify the trash mailbox name.
+        This variable is used for delete function.
+        Default: '[Gmail]/trash'
+
+        Note: If you used japanease gmail. please set as follows in your .vimrc.
+
+            let g:gmail_mailbox_trash = "[Gmail]/ゴミ箱"
 
 *g:gmail_default_encoding*
         This variable specify the default encoding.

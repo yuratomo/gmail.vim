@@ -115,3 +115,4 @@ HISTORY
                      remove 'delete' feature
 
     2013/02/05       translate README.md
+    2013/03/29 (1.3) support delete feature

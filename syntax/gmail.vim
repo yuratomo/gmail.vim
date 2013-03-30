@@ -1,5 +1,5 @@
 " File: syntax/gmail.vim
-" Last Modified: 2012.08.10
+" Last Modified: 2013.03.29
 " Author: yuratomo (twitter @yusetomo)
 
 if version < 700
@@ -33,6 +33,7 @@ syn match   gmailButton     "\[update\]"
 syn match   gmailButton     "\[unread\]"
 syn match   gmailButton     "\[read\]"
 syn match   gmailButton     "\[archive\]"
+syn match   gmailButton     "\[delete\]"
 syn match   gmailButton     "\[next\]"
 syn match   gmailButton     "\[prev\]"
 syn match   gmailButton     "\[send\]"

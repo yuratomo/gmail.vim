@@ -38,6 +38,10 @@ if !exists('g:gmail_signature')
   endif
 endif
 
+if !exists('g:gmail_mailbox_trash')
+  let g:gmail_mailbox_trash = "[Gmail]/trash"
+endif
+
 if !exists('g:gmail_timeout_for_search')
   let g:gmail_timeout_for_search = 4000
 endif

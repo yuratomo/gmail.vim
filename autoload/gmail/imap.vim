@@ -388,7 +388,40 @@ endfunction
 " COPY
 
 function! gmail#imap#copy(id, mailbox)
-  return s:common_request('COPY ' . a:id . ' ' . a:mailbox, g:gmail_timeout)
+  if type(a:id) == type([])
+    let ids = join(a:id, ',')
+  else
+    let ids = a:id
+  endif
+
+  return s:common_request('COPY ' . ids . ' ' . a:mailbox, g:gmail_timeout)
+endfunction
+
+" DELETE
+
+function! gmail#imap#delete(id)
+  " get trash mailbox
+  let mailbox = ''
+  for box in s:gmail_mailbox
+    if box.dname == g:gmail_mailbox_trash
+      let mailbox = box.name
+    endif
+  endfor
+  if mailbox == ''
+    call gmail#util#message('Can not find ' . g:gmail_mailbox_trash . '. Please set g:gmail_mailbox_trash.')
+    return 0
+  endif
+
+  " copy to [GMAIL]/trash
+  let res = gmail#imap#copy(a:id, mailbox)
+  if s:is_response_error(res)
+    return 0
+  endif
+
+  " arcive
+  call gmail#imap#archive(a:id)
+
+  return 1
 endfunction
 
 " ARCHIVE

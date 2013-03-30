@@ -85,3 +85,5 @@ HISTORY
 2012/08/12 (1.0) first release
 2013/01/28 (1.1) append 'archive' feature
                  remove 'delete' feature
+2013/02/05       translate README.md
+2013/03/29 (1.3) support delete feature
