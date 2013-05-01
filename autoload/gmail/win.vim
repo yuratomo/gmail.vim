@@ -85,7 +85,7 @@ function! s:define_default_key_mappings(mode)
       nmap <silent> <buffer> <s-space> <Plug>(gmail_select_and_prev)
       nmap <silent> <buffer> dd        <Plug>(gmail_delete)
       nmap <silent> <buffer> r         <Plug>(gmail_mark_readed)
-      nmap <silent> <buffer> R         <Plug>(gmail_mark_unreaded)
+      nmap <silent> <buffer> R         <Plug>(gmail_mark_unread)
       nmap <silent> <buffer> x         <Plug>(gmail_archive)
     augroup END
   endif
@@ -369,7 +369,7 @@ function! gmail#win#click()
       elseif menu == 'update'
         call gmail#win#newly_list()
       elseif menu == 'unread'
-        call gmail#win#mark_unreaded()
+        call gmail#win#mark_unread()
       elseif menu == 'read'
         call gmail#win#mark_readed()
       elseif menu == 'delete'
@@ -574,7 +574,7 @@ function! gmail#win#mark_readed()
   call gmail#util#message('mark read!!')
 endfunction
 
-function! gmail#win#mark_unreaded()
+function! gmail#win#mark_unread()
   if gmail#win#mode() != g:GMAIL_MODE_LIST
     return
   endif

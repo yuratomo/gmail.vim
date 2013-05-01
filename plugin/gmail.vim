@@ -71,7 +71,7 @@ nnoremap <silent> <Plug>(gmail_select_and_next) :<C-u>call gmail#win#select('.',
 nnoremap <silent> <Plug>(gmail_select_and_prev) :<C-u>call gmail#win#select('.', -1, '')<CR>
 nnoremap <silent> <Plug>(gmail_delete)          :<C-u>call gmail#win#delete()<CR>
 nnoremap <silent> <Plug>(gmail_mark_readed)     :<C-u>call gmail#win#mark_readed()<CR>
-nnoremap <silent> <Plug>(gmail_mark_unreaded)   :<C-u>call gmail#win#mark_unreaded()<CR>
+nnoremap <silent> <Plug>(gmail_mark_unread)     :<C-u>call gmail#win#mark_unread()<CR>
 nnoremap <silent> <Plug>(gmail_archive)         :<C-u>call gmail#win#archive()<CR>
 
 let g:loaded_gmail = 1

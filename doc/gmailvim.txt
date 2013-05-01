@@ -206,7 +206,7 @@ r
         Mark readed selected mails or the mail under the cursor.
 
 R
-        Mark unreaded selected mails or the mail under the cursor.
+        Mark unread selected mails or the mail under the cursor.
 
 x
         Archive selected mails or the mail under the cursor.
@@ -271,8 +271,8 @@ NORMAL MODE                                        *gmailvim-mappings-preview*
 <Plug>(gmail_mark_readed)                          *<Plug>(gmail_mark_readed)*
         Mark readed selected mails or the mail under the cursor.
 
-<Plug>(gmail_mark_unreaded)                      *<Plug>(gmail_mark_unreaded)*
-        Mark unreaded selected mails or the mail under the cursor.
+<Plug>(gmail_mark_unread)                          *<Plug>(gmail_mark_unread)*
+        Mark unread selected mails or the mail under the cursor.
 
 <Plug>(gmail_archive)                                  *<Plug>(gmail_archive)*
         Archive selected mails or the mail under the cursor.
