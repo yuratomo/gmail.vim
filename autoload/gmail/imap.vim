@@ -419,7 +419,8 @@ function! gmail#imap#delete(id)
   endif
 
   " arcive
-  call gmail#imap#archive(a:id)
+  " 2013/05/01 no need archive
+  "call gmail#imap#archive(a:id)
 
   return 1
 endfunction

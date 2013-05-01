@@ -117,3 +117,6 @@ HISTORY
     2013/02/05         translate README.md
     2013/03/29 (1.3)   support delete feature
     2013/05/01 (1.3.1) support unread feature for message window (#6)
+    2013/05/01 (1.3.2) append <Plug> keymaps and default keymap 'dd' , 'r' , 'R' and 'x' (#7)
+                       buf fix delete feature
+

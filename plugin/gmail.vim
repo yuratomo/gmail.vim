@@ -59,4 +59,19 @@ command! -nargs=0 GmailChangeUser   :call gmail#changeUser()
 command! -nargs=0 GmailExit         :call gmail#exit()
 command! -nargs=0 GmailCheckNewMail :call gmail#checkNewMail()
 
+nnoremap <silent> <Plug>(gmail_open)            :<C-u>call gmail#win#click()<CR>
+nnoremap <silent> <Plug>(gmail_back)            :<C-u>call gmail#win#back()<CR>
+nnoremap <silent> <Plug>(gmail_next_menu)       :<C-u>call gmail#win#tab(1)<CR>
+nnoremap <silent> <Plug>(gmail_prev_menu)       :<C-u>call gmail#win#tab(-1)<CR>
+nnoremap <silent> <Plug>(gmail_update)          :<C-u>call gmail#win#update()<cr>
+nnoremap <silent> <Plug>(gmail_update_all)      :<C-u>call gmail#win#update_all()<cr>
+nnoremap <silent> <Plug>(gmail_new_mail)        :<C-u>call gmail#smtp#open('',[],'',[])<CR>
+nnoremap <silent> <Plug>(gmail_select_all)      :<C-u>call gmail#win#select_all()<CR>
+nnoremap <silent> <Plug>(gmail_select_and_next) :<C-u>call gmail#win#select('.',  1, '')<CR>
+nnoremap <silent> <Plug>(gmail_select_and_prev) :<C-u>call gmail#win#select('.', -1, '')<CR>
+nnoremap <silent> <Plug>(gmail_delete)          :<C-u>call gmail#win#delete()<CR>
+nnoremap <silent> <Plug>(gmail_mark_readed)     :<C-u>call gmail#win#mark_readed()<CR>
+nnoremap <silent> <Plug>(gmail_mark_unreaded)   :<C-u>call gmail#win#mark_unreaded()<CR>
+nnoremap <silent> <Plug>(gmail_archive)         :<C-u>call gmail#win#archive()<CR>
+
 let g:loaded_gmail = 1

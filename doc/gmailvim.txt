@@ -199,6 +199,18 @@ c
 a
         Select all the mails that is displayed.
 
+dd
+        Delete selected mails or the mail under the cursor.
+
+r
+        Mark readed selected mails or the mail under the cursor.
+
+R
+        Mark unreaded selected mails or the mail under the cursor.
+
+x
+        Archive selected mails or the mail under the cursor.
+
 <space>
         Select the mail and move down the cursor.
 
@@ -218,6 +230,52 @@ NORMAL MODE                                        *gmailvim-mappings-preview*
 
 <s-TAB>
         Move focus to previous menu.
+
+
+------------------------------------------------------------------------------
+5.4. Change keymapping
+
+<Plug>(gmail_open)                                        *<Plug>(gmail_open)*
+        Open the mail under the cursor.
+
+<Plug>(gmail_back)                                        *<Plug>(gmail_back)*
+        Back the preview window from new mail window.
+
+<Plug>(gmail_next_menu)                              *<Plug>(gmail_next_menu)*
+        Move focus to next menu.
+
+<Plug>(gmail_prev_menu)                              *<Plug>(gmail_prev_menu)*
+        Move focus to previous menu.
+
+<Plug>(gmail_update)                                    *<Plug>(gmail_update)*
+        Update the mail list.
+
+<Plug>(gmail_update_all)                            *<Plug>(gmail_update_all)*
+        Update all the mailbox.
+
+<Plug>(gmail_new_mail)                                *<Plug>(gmail_new_mail)*
+        Create new the mail. This function is beta.
+
+<Plug>(gmail_select_all)                            *<Plug>(gmail_select_all)*
+        Select all the mails that is displayed.
+
+<Plug>(gmail_select_and_next)                  *<Plug>(gmail_select_and_next)*
+        Select the mail and move down the cursor.
+
+<Plug>(gmail_select_and_prev)                  *<Plug>(gmail_select_and_prev)*
+        Select the mail and move up the cursor.
+
+<Plug>(gmail_delete)                                    *<Plug>(gmail_delete)*
+        Delete selected mails or the mail under the cursor.
+
+<Plug>(gmail_mark_readed)                          *<Plug>(gmail_mark_readed)*
+        Mark readed selected mails or the mail under the cursor.
+
+<Plug>(gmail_mark_unreaded)                      *<Plug>(gmail_mark_unreaded)*
+        Mark unreaded selected mails or the mail under the cursor.
+
+<Plug>(gmail_archive)                                  *<Plug>(gmail_archive)*
+        Archive selected mails or the mail under the cursor.
 
 
 ==============================================================================

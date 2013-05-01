@@ -54,26 +54,40 @@ function! gmail#win#open(mode)
   endif
 
   silent edit `=bufname`
+  call s:define_default_key_mappings(a:mode)
+
   setl bt=nofile noswf nowrap hidden nolist nomodifiable ft=gmail
 
-  augroup gmail
-    au!
-    exe 'au BufDelete <buffer> call gmail#imap#exit()'
-    exe 'au VimLeavePre * call gmail#imap#exit()'
-  augroup END
+endfunction
 
-  nnoremap <buffer> <CR>    :call gmail#win#click()<CR>
-  nnoremap <buffer> <BS>    :call gmail#win#back()<CR>
-  nnoremap <buffer> <TAB>   :call gmail#win#tab(1)<CR>
-  nnoremap <buffer> <s-TAB> :call gmail#win#tab(-1)<CR>
-  if a:mode == g:GMAIL_MODE_MAILBOX || a:mode == g:GMAIL_MODE_LIST
-    nnoremap <buffer> u     :call gmail#win#update()<cr>
-    nnoremap <buffer> <s-u> :call gmail#win#update_all()<cr>
-    nnoremap <buffer> s     :call gmail#win#search()<CR>
-    nnoremap <buffer> c     :call gmail#smtp#open('',[],'',[])<CR>
-    nnoremap <buffer> a     :call gmail#win#select_all()<CR>
-    nnoremap <buffer> <space>   :call gmail#win#select('.',  1, '')<CR>
-    nnoremap <buffer> <s-space> :call gmail#win#select('.', -1, '')<CR>
+function! s:define_default_key_mappings(mode)
+  if a:mode == g:GMAIL_MODE_BODY
+    augroup gmail
+      au BufDelete <buffer> call gmail#imap#exit()
+      au VimLeavePre *      call gmail#imap#exit()
+      nmap <silent> <buffer> <CR>      <Plug>(gmail_open)
+      nmap <silent> <buffer> <BS>      <Plug>(gmail_back)
+      nmap <silent> <buffer> <TAB>     <Plug>(gmail_next_menu)
+      nmap <silent> <buffer> <s-TAB>   <Plug>(gmail_prev_menu)
+    augroup END
+  else
+    augroup gmail
+      au BufDelete <buffer> call gmail#imap#exit()
+      au VimLeavePre *      call gmail#imap#exit()
+      nmap <silent> <buffer> <CR>      <Plug>(gmail_open)
+      nmap <silent> <buffer> <TAB>     <Plug>(gmail_next_menu)
+      nmap <silent> <buffer> <s-TAB>   <Plug>(gmail_prev_menu)
+      nmap <silent> <buffer> u         <Plug>(gmail_update)
+      nmap <silent> <buffer> <s-u>     <Plug>(gmail_update_all)
+      nmap <silent> <buffer> c         <Plug>(gmail_new_mail)
+      nmap <silent> <buffer> a         <Plug>(gmail_select_all)
+      nmap <silent> <buffer> <space>   <Plug>(gmail_select_and_next)
+      nmap <silent> <buffer> <s-space> <Plug>(gmail_select_and_prev)
+      nmap <silent> <buffer> dd        <Plug>(gmail_delete)
+      nmap <silent> <buffer> r         <Plug>(gmail_mark_readed)
+      nmap <silent> <buffer> R         <Plug>(gmail_mark_unreaded)
+      nmap <silent> <buffer> x         <Plug>(gmail_archive)
+    augroup END
   endif
 endfunction
 
@@ -355,51 +369,13 @@ function! gmail#win#click()
       elseif menu == 'update'
         call gmail#win#newly_list()
       elseif menu == 'unread'
-        let ids = gmail#win#get_selections()
-        if empty(ids)
-          call gmail#util#message('Please select an item by space key.')
-        else
-          call gmail#imap#store_seen(ids, 0)
-          call s:reselect()
-          call gmail#win#update_list(0, 1)
-        endif
+        call gmail#win#mark_unreaded()
       elseif menu == 'read'
-        let ids = gmail#win#get_selections()
-        if empty(ids)
-          call gmail#util#message('Please select an item by space key.')
-        else
-          call gmail#imap#store_seen(ids, 1)
-          call s:reselect()
-          call gmail#win#update_list(0, 1)
-        endif
+        call gmail#win#mark_readed()
       elseif menu == 'delete'
-        let ids = gmail#win#get_selections()
-        if empty(ids)
-          call gmail#util#message('Please select an item by space key.')
-        else
-          if gmail#util#confirm('Delete selected files. Are you OK?[y/n]:') == 0
-            call gmail#util#message('Cancel delete...')
-            return
-          endif
-          if gmail#imap#delete(ids) == 0
-            return
-          endif
-          call s:reselect()
-          call gmail#win#update_list(0, 1)
-        endif
+        call gmail#win#delete()
       elseif menu == 'archive'
-        let ids = gmail#win#get_selections()
-        if empty(ids)
-          call gmail#util#message('Please select an item by space key.')
-        else
-          if gmail#util#confirm('Archive selected files. Are you OK?[y/n]:') == 0
-            call gmail#util#message('Cancel archive...')
-            return
-          endif
-          call gmail#imap#archive(ids)
-          call s:reselect()
-          call gmail#win#update_list(0, 1)
-        endif
+        call gmail#win#archive()
       endif
     else
       call s:select_and_show_body(l)
@@ -507,14 +483,20 @@ function! gmail#win#prev()
   call gmail#win#open(g:GMAIL_MODE_BODY)
 endfunction
 
+function! s:get_uid(l)
+  let line = getline(a:l)
+  let items = split(line[2:], ' ')
+  return items[0]
+endfunction
+
 function! s:select_and_show_body(l)
   call gmail#win#hilightLine('gmailSelect', a:l)
   let cline = getline(a:l)
-  let line = split(cline[2:], ' ')
+  let uid = s:get_uid(a:l)
   call gmail#win#setline(a:l, '  ' . cline[2:])
   let s:gmail_previewed_list_line = a:l
-  let s:gmail_previewed_id = line[0]
-  call s:show_body(line[0])
+  let s:gmail_previewed_id = uid
+  call s:show_body(uid)
 endfunction
 
 function! s:get_previewed_id()
@@ -533,3 +515,117 @@ function! s:show_body(id)
   call gmail#util#message('show message normally.')
 endfunction
 
+function! gmail#win#delete()
+  if gmail#win#mode() != g:GMAIL_MODE_LIST
+    return
+  endif
+  let [cl,cc] = [ line('.'), col('.') ]
+
+  let message = 'Delete selected items. Are you OK?[y/n]:'
+  let ids = gmail#win#get_selections()
+  if empty(ids)
+    let l = line('.')
+    if l == 1
+      call gmail#util#message('Please select an item by space key.')
+      return
+    endif
+    unlet ids
+    let ids = s:get_uid(l)
+    let message = 'Delete item under the cursor. Are you OK?[y/n]:'
+  endif
+  echoerr string(ids)
+
+  if gmail#util#confirm(message) == 0
+    call gmail#util#message('Cancel delete...')
+    return
+  endif
+  if gmail#imap#delete(ids) == 0
+    return
+  endif
+  call s:reselect()
+  call gmail#win#update_list(0, 1)
+  call cursor(cl, cc)
+
+  call gmail#util#message('deleted!!')
+endfunction
+
+function! gmail#win#mark_readed()
+  if gmail#win#mode() != g:GMAIL_MODE_LIST
+    return
+  endif
+  let [cl,cc] = [ line('.'), col('.') ]
+
+  let ids = gmail#win#get_selections()
+  if empty(ids)
+    let l = line('.')
+    if l == 1
+      call gmail#util#message('Please select an item by space key.')
+      return
+    endif
+    unlet ids
+    let ids = s:get_uid(l)
+  endif
+
+  call gmail#imap#store_seen(ids, 1)
+  call s:reselect()
+  call gmail#win#update_list(0, 1)
+  call cursor(cl, cc)
+
+  call gmail#util#message('mark read!!')
+endfunction
+
+function! gmail#win#mark_unreaded()
+  if gmail#win#mode() != g:GMAIL_MODE_LIST
+    return
+  endif
+  let [cl,cc] = [ line('.'), col('.') ]
+
+  let ids = gmail#win#get_selections()
+  if empty(ids)
+    let l = line('.')
+    if l == 1
+      call gmail#util#message('Please select an item by space key.')
+      return
+    endif
+    unlet ids
+    let ids = s:get_uid(l)
+  endif
+
+  call gmail#imap#store_seen(ids, 0)
+  call s:reselect()
+  call gmail#win#update_list(0, 1)
+  call cursor(cl, cc)
+
+  call gmail#util#message('mark unread!!')
+endfunction
+
+function! gmail#win#archive()
+  if gmail#win#mode() != g:GMAIL_MODE_LIST
+    return
+  endif
+  let [cl,cc] = [ line('.'), col('.') ]
+
+  let message = 'Archive selected files. Are you OK?[y/n]:'
+  let ids = gmail#win#get_selections()
+  if empty(ids)
+    let l = line('.')
+    if l == 1
+      call gmail#util#message('Please select an item by space key.')
+      return
+    endif
+    unlet ids
+    let ids = s:get_uid(l)
+    let message = 'Archive item under the cursor. Are you OK?[y/n]:'
+  endif
+
+  if gmail#util#confirm(message) == 0
+    call gmail#util#message('Cancel archive...')
+    return
+  endif
+  call gmail#imap#archive(ids)
+  call s:reselect()
+  call gmail#win#update_list(0, 1)
+  call cursor(cl, cc)
+
+  call gmail#util#message('archived!!')
+endfunction
