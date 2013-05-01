@@ -4,10 +4,10 @@
 
 let s:gmail_title_prefix = 'gmail-'
 let g:gmail_search_key = 'ALL'
-let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new' ]
+let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new', 'log' ]
 let s:gmail_list_menu = '   [more] [update] [unread] [read] [archive] [delete]'
 let s:gmail_body_menu = '[next] [prev] [reply] [reply_all] [forward] [unread] [easy_html_view]'
-let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
+let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE, g:GMAIL_MODE_LOG ] = range(5)
 let s:gmail_mailbox_item_count = 0
 
 function! gmail#win#open(mode)
@@ -15,7 +15,10 @@ function! gmail#win#open(mode)
   if empty(res) || res[-1] !~ '? OK'
     return
   endif
+  call s:open(a:mode)
+endfunction
 
+function! s:open(mode)
   let pref = s:gmail_winname[a:mode]
   let bufname = s:gmail_title_prefix . pref
 
@@ -35,6 +38,11 @@ function! gmail#win#open(mode)
     new
     wincmd K
     exe 'res ' . string(g:gmail_page_size+1)
+  elseif a:mode == g:GMAIL_MODE_LOG
+    call s:open(g:GMAIL_MODE_MAILBOX)
+    call s:open(g:GMAIL_MODE_LIST)
+    botright new
+    res 5
   else
     let found = 0
     let winnum = winnr('$')
@@ -42,7 +50,8 @@ function! gmail#win#open(mode)
       let bn = bufname(winbufnr(winno))
       let title_mbox = s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_MAILBOX]
       let title_list = s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_LIST]
-      if bn != title_mbox && bn != title_list
+      let title_log  = s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_LOG]
+      if bn != title_mbox && bn != title_list && bn != title_log
          exe winno . "wincmd w"
          let found = 1
       endif
@@ -70,6 +79,7 @@ function! s:define_default_key_mappings(mode)
       nmap <silent> <buffer> <TAB>     <Plug>(gmail_next_menu)
       nmap <silent> <buffer> <s-TAB>   <Plug>(gmail_prev_menu)
     augroup END
+  elseif a:mode == g:GMAIL_MODE_LOG
   else
     augroup gmail
       au BufDelete <buffer> call gmail#imap#exit()
@@ -103,6 +113,21 @@ function! gmail#win#clear()
   setl nomodifiable
 endfunction
 
+function! gmail#win#log(msg)
+  if get(g:, 'gmail_show_log_window', 0) != 1
+    return
+  endif
+
+  let back = gmail#win#mode()
+  call s:open(g:GMAIL_MODE_LOG)
+  setl modifiable
+  call setline(line('$')+1, a:msg)
+  call cursor(line('$'), 0)
+  redraw
+  setl nomodifiable
+  call s:open(back)
+endfunction
+
 function! gmail#win#hilightLine(name, line)
   call clearmatches()
   redraw
@@ -120,6 +145,8 @@ function! gmail#win#mode()
     return g:GMAIL_MODE_BODY
   elseif bufname =~ s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_CREATE]
     return g:GMAIL_MODE_CREATE
+  elseif bufname =~ s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_LOG]
+    return g:GMAIL_MODE_LOG
   endif
   return -1
 endfunction
@@ -129,6 +156,7 @@ function! gmail#win#all_close()
   exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_LIST]
   exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_BODY]
   exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_CREATE]
+  exe 'silent! bd ' . s:gmail_title_prefix . s:gmail_winname[g:GMAIL_MODE_LOG]
 endfunction
 
 function! gmail#win#select(line, direct, mark)

@@ -159,6 +159,9 @@ USAGE                                                         *gmailvim-usage*
 
         Note: You probably do not need to change.
 
+*g:gmail_show_log_window*
+        Show log window. (debug)
+
 
 ==============================================================================
 5. Mappings                                                *gmailvim-mappings*

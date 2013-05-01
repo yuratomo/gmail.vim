@@ -5,10 +5,12 @@
 function! gmail#util#message(msg)
   echo 'Gmail: ' . a:msg
   redraw
+  call gmail#win#log('INF ' . a:msg)
 endfunction
 
 function! gmail#util#error(msg)
   echoerr 'Gmail: ' . a:msg
+  call gmail#win#log('ERR ' . a:msg)
 endfunction
 
 function! gmail#util#confirm(msg)
