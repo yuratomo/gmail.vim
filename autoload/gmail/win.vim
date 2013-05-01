@@ -6,7 +6,7 @@ let s:gmail_title_prefix = 'gmail-'
 let g:gmail_search_key = 'ALL'
 let s:gmail_winname = [ 'mailbox', 'list', 'body', 'new' ]
 let s:gmail_list_menu = '   [more] [update] [unread] [read] [archive] [delete]'
-let s:gmail_body_menu = '[next] [prev] [reply] [reply_all] [forward] [easy_html_view]'
+let s:gmail_body_menu = '[next] [prev] [reply] [reply_all] [forward] [unread] [easy_html_view]'
 let [ g:GMAIL_MODE_MAILBOX, g:GMAIL_MODE_LIST, g:GMAIL_MODE_BODY, g:GMAIL_MODE_CREATE ] = range(4)
 let s:gmail_mailbox_item_count = 0
 
@@ -402,7 +402,6 @@ function! gmail#win#click()
         endif
       endif
     else
-      let s:gmail_selected_list_line = l
       call s:select_and_show_body(l)
     endif
   elseif gmail#win#mode() == g:GMAIL_MODE_BODY
@@ -419,6 +418,15 @@ function! gmail#win#click()
         call gmail#smtp#open(head.Return_Path, head.Cc, 'Re:' . head.Subject, s:replyBody())
       elseif menu == 'forward'
         call gmail#smtp#open('', [], 'Fw:' . head.Subject, s:replyBody())
+      elseif menu == 'unread'
+        let id = s:get_previewed_id()
+        if id != -1
+          call gmail#imap#store_seen(id, 0)
+          call gmail#win#clear()
+          call s:reselect()
+          call gmail#win#update_list(0, 1)
+          call cursor(s:gmail_previewed_list_line, 0)
+        endif
       elseif menu == 'easy_html_view'
         call gmail#util#neglect_htmltag()
       endif
@@ -470,7 +478,7 @@ endfunction
 function! gmail#win#next()
   call gmail#win#open(g:GMAIL_MODE_LIST)
   let last = line('$')
-  let l = s:gmail_selected_list_line
+  let l = s:gmail_previewed_list_line
   if l == last
     call gmail#win#more_list()
     let last = line('$')
@@ -480,7 +488,6 @@ function! gmail#win#next()
     endif
   endif
   let l += 1
-  let s:gmail_selected_list_line = l
 
   call cursor(l, 0)
   call s:select_and_show_body(l)
@@ -488,12 +495,11 @@ function! gmail#win#next()
 endfunction
 
 function! gmail#win#prev()
-  let l = s:gmail_selected_list_line
+  let l = s:gmail_previewed_list_line
   if l == 1
     return
   endif
   let l -= 1
-  let s:gmail_selected_list_line = l
 
   call gmail#win#open(g:GMAIL_MODE_LIST)
   call cursor(l, 0)
@@ -506,7 +512,16 @@ function! s:select_and_show_body(l)
   let cline = getline(a:l)
   let line = split(cline[2:], ' ')
   call gmail#win#setline(a:l, '  ' . cline[2:])
+  let s:gmail_previewed_list_line = a:l
+  let s:gmail_previewed_id = line[0]
   call s:show_body(line[0])
+endfunction
+
+function! s:get_previewed_id()
+  if !exists('s:gmail_previewed_id')
+    return -1
+  endif
+  return s:gmail_previewed_id
 endfunction
 
 function! s:show_body(id)
