@@ -192,6 +192,7 @@ function! gmail#util#neglect_htmltag()
   :%s/&copy;/c/ge
   :%s/&apos;/'/ge
   :%s/&nbsp;/ /ge
+  :%s/&mdash;/--/ge
   redraw
   setl nomodifiable
 endfunction
