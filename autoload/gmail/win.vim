@@ -156,6 +156,11 @@ function! gmail#win#select(line, direct, mark)
       let l = a:mark . l[1:]
     endif
     call gmail#win#setline(line, l)
+
+    if get(g:, 'gmail_nomove_after_select', 0) == 1
+      return
+    endif
+
     call cursor(line+a:direct, 0)
   endif
 endfunction

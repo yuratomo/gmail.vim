@@ -128,6 +128,11 @@ USAGE                                                         *gmailvim-usage*
 
             let g:gmail_mailbox_trash = "[Gmail]/ゴミ箱"
 
+*g:gmail_nomove_after_select*
+        This variable turn off automatic movement after press space.
+
+        Example: let g:gmail_nomove_after_select = 1
+
 *g:gmail_default_encoding*
         This variable specify the default encoding.
         Default: 'iso-2022-jp'
