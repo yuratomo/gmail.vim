@@ -80,6 +80,12 @@ function! s:define_default_key_mappings(mode)
       nmap <silent> <buffer> <s-TAB>   <Plug>(gmail_prev_menu)
     augroup END
   elseif a:mode == g:GMAIL_MODE_LOG
+  elseif a:mode == g:GMAIL_MODE_CREATE
+    augroup gmail
+      nmap <silent> <buffer> <CR>      <Plug>(gmail_open)
+      nmap <silent> <buffer> <TAB>     <Plug>(gmail_next_menu)
+      nmap <silent> <buffer> <s-TAB>   <Plug>(gmail_prev_menu)
+    augroup END
   else
     augroup gmail
       au BufDelete <buffer> call gmail#imap#exit()

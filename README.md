@@ -122,4 +122,5 @@ HISTORY
     2013/05/01 (1.3.3) append g:gmail_nomove_after_select (#8)
     2013/05/01 (1.3.4) replace '&mdash;' to '--' for easy_html_view (#9)
     2013/05/01 (1.3.5) append g:gmail_show_log_window for debug
+    2013/07/07 (1.3.6) 'c' should not be mapped when composing emails.(#12)
 
