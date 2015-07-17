@@ -31,12 +31,12 @@ Please refer to the README.md as a quick reference.
 ==============================================================================
 2. Requirements                                        *gmailvim-requirements*
 
-*vimproc*
+* vimproc
         Interactive command execution in Vim.
 
         - https://github.com/Shougo/vimproc
 
-*openssl*
+* openssl
         A toolkit implementing SSL v2/v3 and TLS protocols with full-strength
         cryptography world-wide.  I have been tested to work with openssl
         included in msysgit for Windows.
@@ -110,7 +110,7 @@ USAGE                                                         *gmailvim-usage*
         This variable specify the number of lines at mail-list-window.
         Default: 10
 
-        Note: Gmail's Fetch is very slow. Therefore, you should not 
+        Note: Gmail's Fetch is very slow. Therefore, you should not
               increase much good.
 
 *g:gmail_default_mailbox*
@@ -171,7 +171,7 @@ There are mappings in gmail.vim.
 5.1. Mailbox
 
 NORMAL MODE                                        *gmailvim-mappings-mailbox*
-<CR> 
+<CR>
         Open the mailbox under the cursor.
 
 u
@@ -188,7 +188,7 @@ c
 5.2. Mail list
 
 NORMAL MODE                                           *gmailvim-mappings-list*
-<CR> 
+<CR>
         Open the mail under the cursor. If the cursor is top, execute menu
         under the cursor.
 
@@ -230,7 +230,7 @@ x
 5.3. Mail preview
 
 NORMAL MODE                                        *gmailvim-mappings-preview*
-<CR> 
+<CR>
         Open the mail under the cursor.
 
 <TAB>
@@ -305,7 +305,7 @@ NORMAL MODE                                        *gmailvim-mappings-preview*
 ==============================================================================
 7. Todo                                                        *gmailvim-todo*
 
-* Attachment file 
+* Attachment file
     - プレビュー表示時は添付ファイルは受信しないようにする。
     - 添付ファイルの保存
     - メール送信時に添付ファイルをつけて送れるようにする。

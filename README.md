@@ -123,4 +123,5 @@ HISTORY
     2013/05/01 (1.3.4) replace '&mdash;' to '--' for easy_html_view (#9)
     2013/05/01 (1.3.5) append g:gmail_show_log_window for debug
     2013/07/07 (1.3.6) 'c' should not be mapped when composing emails.(#12)
+    2014/07/04 (1.3.7) fix E154: Duplicate tag vimproc in file $HOME/.vim/.neobundle/doc/vimproc.txt
 
